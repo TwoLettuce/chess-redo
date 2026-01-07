@@ -95,17 +95,30 @@ public class ChessBoard {
 
     @Override
     public String toString() {
-        String s_board = "";
+        StringBuilder s_board = new StringBuilder();
         for (int row = 0; row < 8; row ++){
             for (int col = 0; col < 8; col ++){
-
+                s_board.append(pieceToChar(board[row][col])).append(" ");
             }
+            s_board.append("\n");
         }
+        return s_board.toString();
     }
 
-    private char pieceToChar(ChessPiece piece){
+    private String pieceToChar(ChessPiece piece){
+        String c_piece;
         switch (piece.getPieceType()){
-            case ChessPiece.PieceType.PAWN -> 'p';
+            case PAWN -> c_piece = "p";
+            case ROOK -> c_piece = "r";
+            case BISHOP -> c_piece = "b";
+            case KNIGHT -> c_piece = "n";
+            case KING -> c_piece = "k";
+            case QUEEN -> c_piece = "q";
+            default -> c_piece = "-";
         }
+        if (!c_piece.equals("-") && piece.getTeamColor() == ChessGame.TeamColor.WHITE){
+            return c_piece.toUpperCase();
+        }
+        return c_piece;
     }
 }
