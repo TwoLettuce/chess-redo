@@ -90,13 +90,22 @@ public class ChessBoard {
 
     @Override
     public int hashCode() {
-        return Arrays.deepHashCode(board);
+        int hashTotal = 0;
+        for (int row = 0; row < 8; row++){
+            for (int col = 0; col < 8; col++){
+                if (board[row][col] == null){
+                    continue;
+                }
+                hashTotal += board[row][col].hashCode()*row*col;
+            }
+        }
+        return hashTotal;
     }
 
     @Override
     public String toString() {
         StringBuilder s_board = new StringBuilder();
-        for (int row = 0; row < 8; row ++){
+        for (int row = 8; row < 0; row ++){
             for (int col = 0; col < 8; col ++){
                 s_board.append(pieceToChar(board[row][col])).append(" ");
             }
@@ -107,6 +116,9 @@ public class ChessBoard {
 
     private String pieceToChar(ChessPiece piece){
         String c_piece;
+        if (piece == null){
+            return "-";
+        }
         switch (piece.getPieceType()){
             case PAWN -> c_piece = "p";
             case ROOK -> c_piece = "r";
