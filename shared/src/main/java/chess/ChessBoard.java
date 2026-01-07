@@ -72,8 +72,8 @@ public class ChessBoard {
                 case 0, 7 -> ChessPiece.PieceType.ROOK;
                 case 1, 6 -> ChessPiece.PieceType.KNIGHT;
                 case 2, 5 -> ChessPiece.PieceType.BISHOP;
-                case 3 -> ChessPiece.PieceType.KING;
-                case 4 -> ChessPiece.PieceType.QUEEN;
+                case 3 -> ChessPiece.PieceType.QUEEN;
+                case 4 -> ChessPiece.PieceType.KING;
                 default -> throw new RuntimeException();
             };
         }
@@ -105,7 +105,7 @@ public class ChessBoard {
     @Override
     public String toString() {
         StringBuilder s_board = new StringBuilder();
-        for (int row = 8; row < 0; row ++){
+        for (int row = 7; row >= 0; row --){
             for (int col = 0; col < 8; col ++){
                 s_board.append(pieceToChar(board[row][col])).append(" ");
             }
