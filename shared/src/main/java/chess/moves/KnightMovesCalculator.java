@@ -7,7 +7,6 @@ import chess.ChessPosition;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public class KnightMovesCalculator extends MovesCalculator {
     @Override
@@ -20,16 +19,12 @@ public class KnightMovesCalculator extends MovesCalculator {
         for (int rowOffset : new int[]{-2, -1, 1, 2}){
             for (int colOffset : new int[]{-2, -1, 1, 2}){
                 if (Math.abs(rowOffset) != Math.abs(colOffset)){
-                    if (!isInBounds(row+rowOffset, col+colOffset)){
-                        continue;
-                    }
                     ChessPosition potentialPos = new ChessPosition(row + rowOffset, col + colOffset);
-                    if (isBlocked(board, potentialPos, color)){
+                    if (!isInBounds(row+rowOffset, col+colOffset) || isBlocked(board, potentialPos, color)){
                         continue;
                     } else {
                         legalMoves.add(new ChessMove(pos, potentialPos, null));
                     }
-
                 }
             }
         }
