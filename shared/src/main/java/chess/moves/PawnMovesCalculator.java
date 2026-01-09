@@ -33,7 +33,7 @@ public class PawnMovesCalculator extends MovesCalculator {
             ChessPosition potentialPos = new ChessPosition(row + direction, col+colOffset);
             if (colOffset != 0 && board.getPiece(potentialPos) != null && board.getPiece(potentialPos).getTeamColor() != color){
                 legalMoves.add(new ChessMove(pos, potentialPos, null));
-            } else if (board.getPiece(potentialPos) == null){
+            } else if (colOffset == 0 && board.getPiece(potentialPos) == null){
                 legalMoves.add(new ChessMove(pos, potentialPos, null));
                 ChessPosition ffPos = new ChessPosition(row + direction*2, col);
                 if (pos.getRow() == startingRow && board.getPiece(ffPos) == null){
