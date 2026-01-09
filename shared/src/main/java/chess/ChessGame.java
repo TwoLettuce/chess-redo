@@ -52,15 +52,18 @@ public class ChessGame {
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        TeamColor color = board.getPiece(startPosition).getTeamColor();
-        ArrayList<ChessMove> validMoves = new ArrayList<>();
+        ChessBoard currentBoard = new ChessBoard(board);
         if (board.getPiece(startPosition) == null){
             return null;
         }
+        TeamColor color = board.getPiece(startPosition).getTeamColor();
+        ArrayList<ChessMove> validMoves = new ArrayList<>();
         for (var move : Objects.requireNonNull(getPotentialMoves(startPosition))){
+            board.makeMove(move);
             if (!isInCheck(color) && !isInCheckmate(color)){
                 validMoves.add(move);
             }
+            board = new ChessBoard(currentBoard);
         }
 
         return validMoves;
@@ -99,6 +102,9 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
+        if (board.getPiece(move.getStartPosition()) == null){
+            throw new InvalidMoveException("Invalid Move: " + move);
+        }
         if (validMoves(move.getStartPosition()).contains(move)){
             board.makeMove(move);
         } else {
@@ -113,11 +119,33 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
+        ChessPosition kingPos = findKing(teamColor);
         for (int i = 1; i <=8; i++){
             for (int j = 1; j <=8; j++){
-                if ()
+                var thisPos = new ChessPosition(i, j);
+                if (board.getPiece(thisPos) != null && board.getPiece(thisPos).getTeamColor() != teamColor){
+                    for (ChessMove move : Objects.requireNonNull(getPotentialMoves(thisPos))){
+                        if (move.getEndPosition() == kingPos){
+                            return true;
+                        }
+                    }
+                }
             }
         }
+        return false;
+    }
+
+    private ChessPosition findKing(TeamColor teamColor) {
+        for (int i = 1; i <=8; i++){
+            for (int j = 1; j <=8; j++){
+                var thisPos = new ChessPosition(i, j);
+                var thisPiece = board.getPiece(thisPos);
+                if (thisPiece != null && thisPiece.getPieceType() == ChessPiece.PieceType.KING && thisPiece.getTeamColor() == teamColor){
+                    return thisPos;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -127,7 +155,10 @@ public class ChessGame {
      * @return True if the specified team is in checkmate
      */
     public boolean isInCheckmate(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        if (!isInCheck(teamColor) || hasValidMove(teamColor)){
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -138,9 +169,26 @@ public class ChessGame {
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        if (isInCheck(teamColor) || hasValidMove(teamColor)){
+            return false;
+        }
+        return true;
     }
 
+
+    private boolean hasValidMove(TeamColor teamColor){
+        for (int i = 1; i <= 8; i++){
+            for (int j = 1; j <=8; j++){
+                ChessPosition thisPos = new ChessPosition(i, j);
+                if (board.getPiece(thisPos) != null && board.getPiece(thisPos).getTeamColor() == teamColor){
+                    if (!validMoves(thisPos).isEmpty()){
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
     /**
      * Sets this game's chessboard with a given board
      *
@@ -157,5 +205,19 @@ public class ChessGame {
      */
     public ChessBoard getBoard() {
         return board;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ChessGame chessGame = (ChessGame) o;
+        return Objects.equals(board, chessGame.board) && teamTurn == chessGame.teamTurn;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(board, teamTurn);
     }
 }

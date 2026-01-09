@@ -1,6 +1,5 @@
 package chess;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -20,7 +19,7 @@ public class ChessBoard {
         this.board = new ChessPiece[8][8];
         for (int i = 0; i < 8; i++){
             for (int j = 0; j < 8; j++){
-                this.board[i][j] = board.getPiece(new ChessPosition(i, j));
+                this.board[i][j] = board.getPiece(new ChessPosition(i+1, j+1));
             }
         }
     }
@@ -30,11 +29,11 @@ public class ChessBoard {
         var endPos = move.getEndPosition();
         var promoPiece = move.getPromotionPiece();
         if (promoPiece == null){
-            board[endPos.getRow()][endPos.getColumn()] = getPiece(startPos);
+            board[endPos.getRow()-1][endPos.getColumn()-1] = getPiece(startPos);
         } else {
-            board[endPos.getRow()][endPos.getColumn()] = new ChessPiece(getPiece(startPos).getTeamColor(), promoPiece);
+            board[endPos.getRow()-1][endPos.getColumn()-1] = new ChessPiece(getPiece(startPos).getTeamColor(), promoPiece);
         }
-        board[startPos.getRow()][startPos.getColumn()] = null;
+        board[startPos.getRow()-1][startPos.getColumn()-1] = null;
     }
 
     /**
