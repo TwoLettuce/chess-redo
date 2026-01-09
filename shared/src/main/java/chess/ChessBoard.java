@@ -25,6 +25,18 @@ public class ChessBoard {
         }
     }
 
+    public void makeMove(ChessMove move){
+        var startPos = move.getStartPosition();
+        var endPos = move.getEndPosition();
+        var promoPiece = move.getPromotionPiece();
+        if (promoPiece == null){
+            board[endPos.getRow()][endPos.getColumn()] = getPiece(startPos);
+        } else {
+            board[endPos.getRow()][endPos.getColumn()] = new ChessPiece(getPiece(startPos).getTeamColor(), promoPiece);
+        }
+        board[startPos.getRow()][startPos.getColumn()] = null;
+    }
+
     /**
      * Adds a chess piece to the chessboard
      *
