@@ -69,18 +69,6 @@ public class ChessGame {
         return validMoves;
 
 
-//        boolean colorFlipped=false;
-//        if (teamTurn != color){
-//            teamTurn = color;
-//            colorFlipped = true;
-//        }
-//        if (colorFlipped){
-//            if (teamTurn == TeamColor.WHITE){
-//                setTeamTurn(TeamColor.BLACK);
-//            } else {
-//                setTeamTurn(TeamColor.WHITE);
-//            }
-//        }
     }
 
     private Collection<ChessMove> getPotentialMoves(ChessPosition startPos) {
@@ -102,13 +90,26 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
+
         if (board.getPiece(move.getStartPosition()) == null){
             throw new InvalidMoveException("Invalid Move: " + move);
+        }
+        if (teamTurn != board.getPiece(move.getStartPosition()).getTeamColor()){
+            throw new InvalidMoveException("Not your turn!");
         }
         if (validMoves(move.getStartPosition()).contains(move)){
             board.makeMove(move);
         } else {
             throw new InvalidMoveException("Invalid Move: " + move);
+        }
+        flipTeamTurn();
+    }
+
+    private void flipTeamTurn() {
+        if (teamTurn == TeamColor.WHITE){
+            teamTurn = TeamColor.BLACK;
+        } else {
+            teamTurn = TeamColor.WHITE;
         }
     }
 
