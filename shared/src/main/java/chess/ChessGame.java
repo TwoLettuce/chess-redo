@@ -126,7 +126,7 @@ public class ChessGame {
                 var thisPos = new ChessPosition(i, j);
                 if (board.getPiece(thisPos) != null && board.getPiece(thisPos).getTeamColor() != teamColor){
                     for (ChessMove move : Objects.requireNonNull(getPotentialMoves(thisPos))){
-                        if (move.getEndPosition() == kingPos){
+                        if (move.getEndPosition().equals(kingPos)){
                             return true;
                         }
                     }
