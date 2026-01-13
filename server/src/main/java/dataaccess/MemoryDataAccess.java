@@ -30,6 +30,16 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     @Override
+    public AuthData retrieveAuthData(String authToken) {
+        for (AuthData data : authenticatedUsers){
+            if (Objects.equals(data.authToken(), authToken)){
+                return data;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public void clear() {
         users.clear();
     }

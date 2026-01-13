@@ -2,9 +2,14 @@ package service;
 
 import dataaccess.AlreadyTakenException;
 import dataaccess.DataAccess;
+import dataaccess.NotLoggedInException;
+import dataaccess.UserNotFoundException;
 import model.AuthData;
 import model.UserData;
+import org.eclipse.jetty.server.Authentication;
+import request.LoginRequest;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class UserService {
@@ -24,8 +29,20 @@ public class UserService {
         return authData;
     }
 
-    public AuthData login() throws UserNotFoundException{
+    public AuthData login(LoginRequest loginRequest) throws UserNotFoundException {
+        if (dataAccess.getUser(loginRequest.username()) == null ||
+                !Objects.equals(dataAccess.getUser(loginRequest.username()).password(), loginRequest.password())){
+            throw new UserNotFoundException("Error: unauthorized");
+        }
+        AuthData authData = new AuthData(loginRequest.username(), generateToken());
+        dataAccess.addAuthData(authData);
+        return authData;
+    }
 
+    public void logout(String authToken) throws NotLoggedInException {
+        if (dataAccess.authenticateToken(authToken)){
+
+        }
     }
 
     private String generateToken() {
