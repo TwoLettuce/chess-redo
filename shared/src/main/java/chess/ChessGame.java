@@ -53,10 +53,10 @@ public class ChessGame {
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        ChessBoard currentBoard = new ChessBoard(board);
         if (board.getPiece(startPosition) == null){
             return null;
         }
+        ChessBoard currentBoard = new ChessBoard(board);
         TeamColor color = board.getPiece(startPosition).getTeamColor();
         ArrayList<ChessMove> validMoves = new ArrayList<>();
         for (var move : Objects.requireNonNull(getPotentialMoves(startPosition))){
@@ -91,7 +91,6 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
-
         if (board.getPiece(move.getStartPosition()) == null){
             throw new InvalidMoveException("Invalid Move: " + move);
         }
@@ -100,10 +99,10 @@ public class ChessGame {
         }
         if (validMoves(move.getStartPosition()).contains(move)){
             board.makeMove(move);
+            flipTeamTurn();
         } else {
             throw new InvalidMoveException("Invalid Move: " + move);
         }
-        flipTeamTurn();
     }
 
     private void flipTeamTurn() {
