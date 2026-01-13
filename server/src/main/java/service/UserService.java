@@ -40,9 +40,10 @@ public class UserService {
     }
 
     public void logout(String authToken) throws NotLoggedInException {
-        if (dataAccess.authenticateToken(authToken)){
-
+        if (dataAccess.retrieveAuthData(authToken) == null){
+            throw new NotLoggedInException("Error: unauthorized");
         }
+        dataAccess.removeAuth(authToken);
     }
 
     private String generateToken() {

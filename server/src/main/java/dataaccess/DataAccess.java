@@ -12,5 +12,7 @@ public interface DataAccess {
 
     AuthData retrieveAuthData(String authToken);
 
+    void removeAuth(String authToken);
+
     void clear();
 }

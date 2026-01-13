@@ -2,10 +2,13 @@ package service;
 
 import dataaccess.AlreadyTakenException;
 import dataaccess.MemoryDataAccess;
+import dataaccess.NotLoggedInException;
+import dataaccess.UserNotFoundException;
 import model.UserData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import request.LoginRequest;
 
 public class UserServiceTests {
     private static final MemoryDataAccess dataAccess = new MemoryDataAccess();
@@ -36,14 +39,20 @@ public class UserServiceTests {
 
 
     @Test
-    public void loginNormal() throws AlreadyTakenException {
+    public void loginNormal() throws AlreadyTakenException, NotLoggedInException {
         UserData user1 = new UserData("user1", "password1", "email1");
-        userService.registerUser(user1);
-
+        String authToken = userService.registerUser(user1).authToken();
+        userService.logout(authToken);
+        Assertions.assertDoesNotThrow(()-> userService.login(new LoginRequest("user1", "password1")));
     }
 
     @Test
-    public void loginWrongCredentials(){
-
+    public void loginWrongCredentials() throws AlreadyTakenException, NotLoggedInException {
+        UserData user1 = new UserData("user1", "password1", "email1");
+        String authToken = userService.registerUser(user1).authToken();
+        userService.logout(authToken);
+        Assertions.assertThrows(UserNotFoundException.class, ()-> userService.login(new LoginRequest("user1", "password2")));
     }
+
+    
 }
