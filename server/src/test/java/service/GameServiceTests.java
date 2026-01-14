@@ -6,7 +6,6 @@ import dataaccess.MemoryDataAccess;
 import dataaccess.NotLoggedInException;
 import model.GameData;
 import model.UserData;
-import org.eclipse.jetty.server.Authentication;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,5 +81,18 @@ public class GameServiceTests {
         GameData game = new GameData(1, "user1", null, "new game", new ChessGame());
         ArrayList<GameData> expected = new ArrayList<>(List.of(game));
         Assertions.assertEquals(expected, gameService.listGames(authToken));
+    }
+
+    @Test
+    public void joinAlreadyTaken() throws AlreadyTakenException, NotLoggedInException {
+        UserData sampleUser = new UserData("user1", "pass", "email");
+        UserData sadUser = new UserData("fred", "contraseña", "email");
+        String auth1 = userService.registerUser(sampleUser).authToken();
+        gameService.createGame(auth1, "new game");
+        gameService.joinGame(auth1, 1, "WHITE");
+
+        String auth2 = userService.registerUser(sadUser).authToken();
+
+        Assertions.assertThrows(AlreadyTakenException.class, ()-> gameService.joinGame(auth2, 1, "WHITE"));
     }
 }

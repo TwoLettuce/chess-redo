@@ -51,6 +51,9 @@ public class GameService {
             if (game.blackUsername() != null) {
                 throw new AlreadyTakenException("Error: already taken");
             }
+            GameData updatedGameData =  new GameData(game.gameID(), game.whiteUsername(),
+                    dataAccess.getAuthData(authToken).username(), game.gameName(), game.game());
+            dataAccess.updateGame(game.gameID(), updatedGameData);
         }
 
 
