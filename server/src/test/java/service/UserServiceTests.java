@@ -54,5 +54,5 @@ public class UserServiceTests {
         Assertions.assertThrows(UserNotFoundException.class, ()-> userService.login(new LoginRequest("user1", "password2")));
     }
 
-    
+
 }
