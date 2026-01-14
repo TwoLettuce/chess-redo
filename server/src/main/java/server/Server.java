@@ -1,10 +1,7 @@
 package server;
 
 import com.google.gson.Gson;
-import dataaccess.AlreadyTakenException;
-import dataaccess.DataAccess;
-import dataaccess.MemoryDataAccess;
-import dataaccess.UserNotFoundException;
+import dataaccess.*;
 import io.javalin.*;
 import io.javalin.http.Context;
 import model.AuthData;
@@ -67,7 +64,13 @@ public class Server {
     }
 
     private void logout(Context ctx){
-
+        String authToken = ctx.header("authorization");
+        try {
+            userService.logout(authToken);
+        } catch (NotLoggedInException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        }
     }
 
     private void list(Context ctx){
