@@ -34,7 +34,7 @@ public class MemoryDataAccess implements DataAccess {
     }
 
     @Override
-    public AuthData retrieveAuthData(String authToken) {
+    public AuthData getAuthData(String authToken) {
         for (AuthData data : authenticatedUsers){
             if (Objects.equals(data.authToken(), authToken)){
                 return data;
@@ -83,5 +83,15 @@ public class MemoryDataAccess implements DataAccess {
             }
         }
         return null;
+    }
+
+    @Override
+    public void updateGame(int gameID, GameData updatedGameData) {
+        for (int i = 0; i < games.size(); i++) {
+            if (gameID == games.get(i).gameID()){
+                games.set(i, updatedGameData);
+                break;
+            }
+        }
     }
 }

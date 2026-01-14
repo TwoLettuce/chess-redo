@@ -13,7 +13,7 @@ public interface DataAccess {
 
     void addAuthData(AuthData authData);
 
-    AuthData retrieveAuthData(String authToken);
+    AuthData getAuthData(String authToken);
 
     void removeAuth(String authToken);
 
@@ -24,4 +24,6 @@ public interface DataAccess {
     Collection<GameData> getGames();
 
     GameData getGame(int gameID);
+
+    void updateGame(int gameID, GameData updatedGameData);
 }

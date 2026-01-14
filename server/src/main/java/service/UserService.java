@@ -6,7 +6,6 @@ import dataaccess.NotLoggedInException;
 import dataaccess.UserNotFoundException;
 import model.AuthData;
 import model.UserData;
-import org.eclipse.jetty.server.Authentication;
 import request.LoginRequest;
 
 import java.util.Objects;
@@ -40,7 +39,7 @@ public class UserService {
     }
 
     public void logout(String authToken) throws NotLoggedInException {
-        if (dataAccess.retrieveAuthData(authToken) == null){
+        if (dataAccess.getAuthData(authToken) == null){
             throw new NotLoggedInException("Error: unauthorized");
         }
         dataAccess.removeAuth(authToken);
