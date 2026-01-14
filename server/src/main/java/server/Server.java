@@ -5,12 +5,14 @@ import dataaccess.*;
 import io.javalin.*;
 import io.javalin.http.Context;
 import model.AuthData;
+import model.GameData;
 import model.UserData;
 import request.LoginRequest;
 import service.DataService;
 import service.GameService;
 import service.UserService;
 
+import java.util.Collection;
 import java.util.Map;
 
 
@@ -74,7 +76,14 @@ public class Server {
     }
 
     private void list(Context ctx){
-
+        String authToken = ctx.header("authorization");
+        try {
+            Collection<GameData> games = gameService.listGames(authToken);
+            ctx.result(gson.toJson(games));
+        } catch (NotLoggedInException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        }
     }
 
     private void create(Context ctx){
