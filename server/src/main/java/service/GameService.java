@@ -5,6 +5,7 @@ import dataaccess.DataAccess;
 import dataaccess.GameNotFoundException;
 import dataaccess.NotLoggedInException;
 import model.GameData;
+import model.JoinRequest;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -31,10 +32,13 @@ public class GameService {
         return dataAccess.getGames();
     }
 
-    public void joinGame(String authToken, int gameID, String color) throws NotLoggedInException, AlreadyTakenException, GameNotFoundException {
+    public void joinGame(String authToken, JoinRequest joinRequest) throws NotLoggedInException, AlreadyTakenException, GameNotFoundException {
         if (dataAccess.getAuthData(authToken) == null){
             throw new NotLoggedInException("Error: unauthorized");
         }
+        int gameID = joinRequest.gameID();
+        String color = joinRequest.playerColor();
+
         GameData game = dataAccess.getGame(gameID);
         if (game == null || !(Objects.equals(color, "WHITE") || Objects.equals(color, "BLACK"))){
             throw new GameNotFoundException("Error: bad request");

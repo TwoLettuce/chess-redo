@@ -6,6 +6,7 @@ import io.javalin.*;
 import io.javalin.http.Context;
 import model.AuthData;
 import model.GameData;
+import model.JoinRequest;
 import model.UserData;
 import request.LoginRequest;
 import service.DataService;
@@ -112,7 +113,20 @@ public class Server {
     }
 
     private void join(Context ctx){
-
+        String authToken = ctx.header("authorization");
+        JoinRequest joinRequest = gson.fromJson(ctx.body(), JoinRequest.class);
+        try {
+            gameService.joinGame(authToken, joinRequest);
+        } catch (NotLoggedInException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (AlreadyTakenException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (GameNotFoundException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        }
     }
 
     public int run(int desiredPort) {
