@@ -10,7 +10,7 @@ public class DataService {
         this.dataAccess = dataAccess;
     }
 
-    public void clear(){
+    public void clear() {
         dataAccess.clear();
     }
 }

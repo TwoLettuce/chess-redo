@@ -41,18 +41,29 @@ public class UserServiceTests {
     @Test
     public void loginNormal() throws AlreadyTakenException, NotLoggedInException {
         UserData user1 = new UserData("user1", "password1", "email1");
-        String authToken = userService.registerUser(user1).authToken();
-        userService.logout(authToken);
+        userService.registerUser(user1);
         Assertions.assertDoesNotThrow(()-> userService.login(new LoginRequest("user1", "password1")));
     }
 
     @Test
     public void loginWrongCredentials() throws AlreadyTakenException, NotLoggedInException {
         UserData user1 = new UserData("user1", "password1", "email1");
-        String authToken = userService.registerUser(user1).authToken();
-        userService.logout(authToken);
+        userService.registerUser(user1);
         Assertions.assertThrows(UserNotFoundException.class, ()-> userService.login(new LoginRequest("user1", "password2")));
     }
+
+    @Test
+    public void logoutNormal() throws AlreadyTakenException {
+        UserData user1 = new UserData("user1", "password1", "email1");
+        String authToken = userService.registerUser(user1).authToken();
+        Assertions.assertDoesNotThrow(() -> userService.logout(authToken));
+    }
+
+    @Test
+    public void logoutNotLoggedIn() {
+        Assertions.assertThrows(NotLoggedInException.class, () -> userService.logout("InvalidAuthToken"));
+    }
+
 
 
 }
