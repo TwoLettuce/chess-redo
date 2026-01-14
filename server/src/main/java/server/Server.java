@@ -13,6 +13,7 @@ import service.GameService;
 import service.UserService;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 
@@ -45,6 +46,10 @@ public class Server {
 
     private void register(Context ctx){
         UserData newUser = gson.fromJson(ctx.body(), UserData.class);
+        if (newUser.username() == null || newUser.password() == null || newUser.email() == null){
+            ctx.status(400);
+            ctx.result(gson.toJson(Map.of("message", "Error: bad request")));
+        }
         try {
             AuthData authData = userService.registerUser(newUser);
             ctx.result(gson.toJson(authData));
@@ -56,6 +61,10 @@ public class Server {
 
     private void login(Context ctx){
         LoginRequest loginRequest = gson.fromJson(ctx.body(), LoginRequest.class);
+        if (loginRequest.username() == null || loginRequest.password() == null){
+            ctx.status(400);
+            ctx.result(gson.toJson(Map.of("message", "Error: bad request")));
+        }
         try {
             AuthData authData = userService.login(loginRequest);
             ctx.result(gson.toJson(authData));
@@ -87,7 +96,19 @@ public class Server {
     }
 
     private void create(Context ctx){
-
+        String authToken = ctx.header("authorization");
+        String gameName = (String) gson.fromJson(ctx.body(), HashMap.class).get("gameName");
+        if (gameName == null){
+            ctx.status(400);
+            ctx.result(gson.toJson(Map.of("message", "Error: bad request")));
+        }
+        try {
+            int gameID = gameService.createGame(authToken, gameName);
+            ctx.result(gson.toJson(Map.of("gameID", gameID)));
+        } catch (NotLoggedInException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        }
     }
 
     private void join(Context ctx){
