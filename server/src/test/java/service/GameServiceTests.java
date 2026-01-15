@@ -2,10 +2,13 @@ package service;
 
 import chess.ChessGame;
 import dataaccess.AlreadyTakenException;
+import dataaccess.GameNotFoundException;
 import dataaccess.MemoryDataAccess;
 import dataaccess.NotLoggedInException;
 import model.GameData;
+import model.JoinRequest;
 import model.UserData;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +24,7 @@ public class GameServiceTests {
     private final GameService gameService = new GameService(dataAccess);
 
     @BeforeEach
+    @AfterEach
     public void clear(){
         dataService.clear();
     }
@@ -76,7 +80,7 @@ public class GameServiceTests {
         UserData sampleUser = new UserData("user1", "pass", "email");
         String authToken = userService.registerUser(sampleUser).authToken();
         gameService.createGame(authToken, "new game");
-        Assertions.assertDoesNotThrow(()-> gameService.joinGame(authToken, 1, "WHITE"));
+        Assertions.assertDoesNotThrow(()-> gameService.joinGame(authToken, new JoinRequest("WHITE", 1)));
 
         GameData game = new GameData(1, "user1", null, "new game", new ChessGame());
         ArrayList<GameData> expected = new ArrayList<>(List.of(game));
@@ -84,15 +88,15 @@ public class GameServiceTests {
     }
 
     @Test
-    public void joinAlreadyTaken() throws AlreadyTakenException, NotLoggedInException {
+    public void joinAlreadyTaken() throws AlreadyTakenException, NotLoggedInException, GameNotFoundException {
         UserData sampleUser = new UserData("user1", "pass", "email");
         UserData sadUser = new UserData("fred", "contraseña", "email");
         String auth1 = userService.registerUser(sampleUser).authToken();
         gameService.createGame(auth1, "new game");
-        gameService.joinGame(auth1, 1, "WHITE");
+        gameService.joinGame(auth1, new JoinRequest("WHITE", 1));
 
         String auth2 = userService.registerUser(sadUser).authToken();
 
-        Assertions.assertThrows(AlreadyTakenException.class, ()-> gameService.joinGame(auth2, 1, "WHITE"));
+        Assertions.assertThrows(AlreadyTakenException.class, ()-> gameService.joinGame(auth2, new JoinRequest("WHITE", 1)));
     }
 }

@@ -5,6 +5,7 @@ import dataaccess.MemoryDataAccess;
 import dataaccess.NotLoggedInException;
 import dataaccess.UserNotFoundException;
 import model.UserData;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ public class UserServiceTests {
     private static final DataService dataService = new DataService(dataAccess);
 
     @BeforeEach
+    @AfterEach
     public void clearDB(){
         dataService.clear();
     }

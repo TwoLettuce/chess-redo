@@ -16,6 +16,7 @@ import service.UserService;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 
 public class Server {
@@ -50,6 +51,7 @@ public class Server {
         if (newUser.username() == null || newUser.password() == null || newUser.email() == null){
             ctx.status(400);
             ctx.result(gson.toJson(Map.of("message", "Error: bad request")));
+            return;
         }
         try {
             AuthData authData = userService.registerUser(newUser);
@@ -65,6 +67,7 @@ public class Server {
         if (loginRequest.username() == null || loginRequest.password() == null){
             ctx.status(400);
             ctx.result(gson.toJson(Map.of("message", "Error: bad request")));
+            return;
         }
         try {
             AuthData authData = userService.login(loginRequest);
@@ -89,7 +92,7 @@ public class Server {
         String authToken = ctx.header("authorization");
         try {
             Collection<GameData> games = gameService.listGames(authToken);
-            ctx.result(gson.toJson(games));
+            ctx.result(gson.toJson(Map.of("games", games)));
         } catch (NotLoggedInException ex) {
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
@@ -102,6 +105,7 @@ public class Server {
         if (gameName == null){
             ctx.status(400);
             ctx.result(gson.toJson(Map.of("message", "Error: bad request")));
+            return;
         }
         try {
             int gameID = gameService.createGame(authToken, gameName);
@@ -115,6 +119,11 @@ public class Server {
     private void join(Context ctx){
         String authToken = ctx.header("authorization");
         JoinRequest joinRequest = gson.fromJson(ctx.body(), JoinRequest.class);
+        if (joinRequest.gameID() == 0 || joinRequest.playerColor() == null){
+            ctx.status(400);
+            ctx.result(gson.toJson(Map.of("message", "Error: bad request")));
+            return;
+        }
         try {
             gameService.joinGame(authToken, joinRequest);
         } catch (NotLoggedInException ex) {
