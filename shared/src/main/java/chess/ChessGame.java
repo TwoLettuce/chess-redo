@@ -124,12 +124,19 @@ public class ChessGame {
         for (int i = 1; i <=8; i++){
             for (int j = 1; j <=8; j++){
                 var thisPos = new ChessPosition(i, j);
-                if (board.getPiece(thisPos) != null && board.getPiece(thisPos).getTeamColor() != teamColor){
-                    for (ChessMove move : Objects.requireNonNull(getPotentialMoves(thisPos))){
-                        if (move.getEndPosition().equals(kingPos)){
-                            return true;
-                        }
-                    }
+                if (determineCheck(thisPos, kingPos)){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean determineCheck(ChessPosition pos, ChessPosition kingPos){
+        if (board.getPiece(pos) != null && board.getPiece(pos).getTeamColor() != board.getPiece(kingPos).getTeamColor()){
+            for (ChessMove move : Objects.requireNonNull(getPotentialMoves(pos))){
+                if (move.getEndPosition().equals(kingPos)){
+                    return true;
                 }
             }
         }

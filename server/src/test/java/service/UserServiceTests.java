@@ -12,9 +12,9 @@ import org.junit.jupiter.api.Test;
 import request.LoginRequest;
 
 public class UserServiceTests {
-    private static final MemoryDataAccess dataAccess = new MemoryDataAccess();
-    private static final UserService userService = new UserService(dataAccess);
-    private static final DataService dataService = new DataService(dataAccess);
+    private final MemoryDataAccess dataAccess = new MemoryDataAccess();
+    private final UserService userService = new UserService(dataAccess);
+    private final DataService dataService = new DataService(dataAccess);
 
     @BeforeEach
     @AfterEach

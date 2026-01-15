@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class DataServiceTests {
-    public static final MemoryDataAccess dataAccess = new MemoryDataAccess();
-    public static final DataService dataService = new DataService(dataAccess);
-    public static final UserService userService = new UserService(dataAccess);
+    public final MemoryDataAccess dataAccess = new MemoryDataAccess();
+    public final DataService dataService = new DataService(dataAccess);
+    public final UserService userService = new UserService(dataAccess);
 
 
     @Test

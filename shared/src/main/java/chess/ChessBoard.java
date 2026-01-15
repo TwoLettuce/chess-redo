@@ -124,33 +124,33 @@ public class ChessBoard {
 
     @Override
     public String toString() {
-        StringBuilder s_board = new StringBuilder();
+        StringBuilder boardAsString = new StringBuilder();
         for (int row = 7; row >= 0; row --){
             for (int col = 0; col < 8; col ++){
-                s_board.append(pieceToChar(board[row][col])).append(" ");
+                boardAsString.append(pieceToChar(board[row][col])).append(" ");
             }
-            s_board.append("\n");
+            boardAsString.append("\n");
         }
-        return s_board.toString();
+        return boardAsString.toString();
     }
 
     private String pieceToChar(ChessPiece piece){
-        String c_piece;
+        String pieceAsString;
         if (piece == null){
             return "-";
         }
         switch (piece.getPieceType()){
-            case PAWN -> c_piece = "p";
-            case ROOK -> c_piece = "r";
-            case BISHOP -> c_piece = "b";
-            case KNIGHT -> c_piece = "n";
-            case KING -> c_piece = "k";
-            case QUEEN -> c_piece = "q";
-            default -> c_piece = "-";
+            case PAWN -> pieceAsString = "p";
+            case ROOK -> pieceAsString = "r";
+            case BISHOP -> pieceAsString = "b";
+            case KNIGHT -> pieceAsString = "n";
+            case KING -> pieceAsString = "k";
+            case QUEEN -> pieceAsString = "q";
+            default -> pieceAsString = "-";
         }
-        if (!c_piece.equals("-") && piece.getTeamColor() == ChessGame.TeamColor.WHITE){
-            return c_piece.toUpperCase();
+        if (!pieceAsString.equals("-") && piece.getTeamColor() == ChessGame.TeamColor.WHITE){
+            return pieceAsString.toUpperCase();
         }
-        return c_piece;
+        return pieceAsString;
     }
 }
