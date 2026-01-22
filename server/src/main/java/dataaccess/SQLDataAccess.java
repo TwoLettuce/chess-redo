@@ -3,14 +3,35 @@ package dataaccess;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 public class SQLDataAccess implements DataAccess {
 
-    String[] tableInitializationStatements;
+    String[] tableInitializationStatements = {
+            """
+            CREATE TABLE IF NOT EXISTS users (username varchar(255) NOT NULL, 
+            password varchar(255) NOT NULL, 
+            email varchar(255) NOT NULL, 
+            INDEX (username));
+            """,
+
+            """
+            CREATE TABLE IF NOT EXISTS authenticatedUsers (username varchar(255), authToken varchar(255), INDEX (authToken));
+            """,
+
+            """
+            CREATE TABLE IF NOT EXISTS games (gameID int NOT NULL AUTO_INCREMENT,
+             whiteUsername varchar(255),
+             blackUsername varchar(255),
+             gameName varchar(255) NOT NULL,
+             game TEXT);
+            """
+    };
     public SQLDataAccess() throws DataAccessException {
         initializeDatabase();
     }
@@ -19,10 +40,12 @@ public class SQLDataAccess implements DataAccess {
         DatabaseManager.createDatabase();
         try (var conn = DatabaseManager.getConnection()){
             for (var statement : tableInitializationStatements){
-
+                try (var preparedStatement = conn.prepareStatement(statement)){
+                    preparedStatement.executeUpdate();
+                }
             }
         } catch (SQLException ex) {
-
+            throw new DataAccessException(String.format("Error: Could not configure database %s", ex.getMessage()));
         }
     }
 
@@ -33,7 +56,25 @@ public class SQLDataAccess implements DataAccess {
 
     @Override
     public void addUser(UserData userData) {
+        try (var conn = DatabaseManager.getConnection()){
+            try (var preparedStatement = conn.prepareStatement("INSERT INTO users (username, password, email) VALUES (?, ?, ?)")){
+                preparedStatement.setString(1, userData.username());
+                preparedStatement.setString(2, cryptographizePassword(userData.password()));
+                preparedStatement.setString(3, userData.email());
+                preparedStatement.executeUpdate();
+            }
 
+        } catch (DataAccessException | SQLException ex){
+
+        }
+    }
+
+    private String cryptographizePassword(String password) {
+        return BCrypt.hashpw(password, BCrypt.gensalt());
+    }
+
+    private boolean decryptographizePassword(String password, String crypographizedPassword){
+        return Objects.equals(crypographizedPassword, cryptographizePassword(password));
     }
 
     @Override
