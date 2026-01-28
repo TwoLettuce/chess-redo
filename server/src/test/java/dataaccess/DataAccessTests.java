@@ -59,4 +59,16 @@ public class DataAccessTests {
         AuthData authData = new AuthData(null, null);
         Assertions.assertThrows(BadRequestException.class, ()->dataAccess.addAuthData(authData));
     }
+
+    @Test
+    public void getAuthTest(){
+        AuthData authData = new AuthData("user", "auoiwj-r923nn2n92nn vi-");
+        dataAccess.addAuthData(authData);
+        Assertions.assertEquals(authData, dataAccess.getAuthData(authData.authToken()));
+    }
+
+    @Test
+    public void getBadAuthTest(){
+        Assertions.assertNull(dataAccess.getAuthData("hey"));
+    }
 }

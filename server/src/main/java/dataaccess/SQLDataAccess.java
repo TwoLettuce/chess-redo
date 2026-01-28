@@ -97,7 +97,16 @@ public class SQLDataAccess implements DataAccess {
 
     @Override
     public AuthData getAuthData(String authToken) {
-        return null;
+        try (var conn = DatabaseManager.getConnection()){
+            try (var preparedStatement = conn.prepareStatement("SELECT username FROM authenticatedUsers WHERE authToken = ?")){
+                preparedStatement.setString(1, authToken);
+                var result = preparedStatement.executeQuery();
+                result.next();
+                return new AuthData(result.getString(1), authToken);
+            }
+        } catch (DataAccessException | SQLException ex){
+            return null;
+        }
     }
 
     @Override
