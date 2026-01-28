@@ -1,9 +1,6 @@
 package service;
 
-import dataaccess.AlreadyTakenException;
-import dataaccess.DataAccess;
-import dataaccess.NotLoggedInException;
-import dataaccess.UserNotFoundException;
+import dataaccess.*;
 import model.AuthData;
 import model.UserData;
 import request.LoginRequest;
@@ -18,7 +15,7 @@ public class UserService {
         this.dataAccess = dataAccess;
     }
 
-    public AuthData registerUser(UserData userData) throws AlreadyTakenException{
+    public AuthData registerUser(UserData userData) throws AlreadyTakenException, BadRequestException {
         if (dataAccess.getUser(userData.username()) != null){
             throw new AlreadyTakenException("Error: already taken");
         }

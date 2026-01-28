@@ -1,6 +1,7 @@
 package dataaccess;
 
 import model.UserData;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -8,6 +9,11 @@ public class DataAccessTests {
     DataAccess dataAccess = new SQLDataAccess();
 
     public DataAccessTests() throws DataAccessException {
+    }
+
+    @AfterEach
+    public void clear(){
+        dataAccess.clear();
     }
 
     @Test
@@ -19,6 +25,21 @@ public class DataAccessTests {
     @Test
     public void addBadUser(){
         UserData newUser = new UserData("hi", "password", null);
-        Assertions.assertThrows()
+        Assertions.assertThrows(Exception.class, ()-> dataAccess.addUser(newUser));
+    }
+
+    @Test
+    public void getUserTest(){
+        UserData newUser = new UserData("hi", "password", "hipassword@gmail.com");
+        UserData differentUser = new UserData("hey", "pass", "email@hotmail.com");
+        dataAccess.addUser(newUser);
+        UserData result = dataAccess.getUser(newUser.username());
+        Assertions.assertEquals(newUser, result);
+        Assertions.assertNotEquals(differentUser, result);
+    }
+
+    @Test
+    public void getBadUser(){
+        Assertions.assertThrows(DataAccessException.class, ()-> dataAccess.getUser("fake"));
     }
 }

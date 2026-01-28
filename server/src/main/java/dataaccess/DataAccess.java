@@ -9,7 +9,7 @@ import java.util.Collection;
 public interface DataAccess {
     UserData getUser(String username);
 
-    void addUser(UserData userData);
+    void addUser(UserData userData) throws BadRequestException;
 
     void addAuthData(AuthData authData);
 

@@ -14,9 +14,9 @@ public class SQLDataAccess implements DataAccess {
 
     String[] tableInitializationStatements = {
             """
-            CREATE TABLE IF NOT EXISTS users (username varchar(255) NOT NULL, 
-            password varchar(255) NOT NULL, 
-            email varchar(255) NOT NULL, 
+            CREATE TABLE IF NOT EXISTS users (username varchar(255) NOT NULL,
+            password varchar(255) NOT NULL,
+            email varchar(255) NOT NULL,
             INDEX (username));
             """,
 
@@ -29,7 +29,8 @@ public class SQLDataAccess implements DataAccess {
              whiteUsername varchar(255),
              blackUsername varchar(255),
              gameName varchar(255) NOT NULL,
-             game TEXT);
+             game TEXT,
+             PRIMARY KEY (gameID));
             """
     };
     public SQLDataAccess() throws DataAccessException {
@@ -51,11 +52,19 @@ public class SQLDataAccess implements DataAccess {
 
     @Override
     public UserData getUser(String username) {
-        return null;
+        try (var conn = DatabaseManager.getConnection()){
+            try (var preppedStatement = conn.prepareStatement("SELECT * FROM users WHERE username = ?;")){
+                preppedStatement.setString(1, username);
+                var result = preppedStatement.executeQuery();
+                return new UserData(result.getString(1), result.getString(2), result.getString(3));
+            }
+        } catch (SQLException | DataAccessException ex){
+            return null;
+        }
     }
 
     @Override
-    public void addUser(UserData userData) {
+    public void addUser(UserData userData) throws BadRequestException {
         try (var conn = DatabaseManager.getConnection()){
             try (var preparedStatement = conn.prepareStatement("INSERT INTO users (username, password, email) VALUES (?, ?, ?)")){
                 preparedStatement.setString(1, userData.username());
@@ -63,9 +72,8 @@ public class SQLDataAccess implements DataAccess {
                 preparedStatement.setString(3, userData.email());
                 preparedStatement.executeUpdate();
             }
-
         } catch (DataAccessException | SQLException ex){
-
+            throw new BadRequestException(String.format("Could not add user: %s", ex.getMessage()));
         }
     }
 
