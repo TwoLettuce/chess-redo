@@ -11,7 +11,7 @@ public interface DataAccess {
 
     void addUser(UserData userData) throws BadRequestException;
 
-    void addAuthData(AuthData authData);
+    void addAuthData(AuthData authData) throws BadRequestException;
 
     AuthData getAuthData(String authToken);
 

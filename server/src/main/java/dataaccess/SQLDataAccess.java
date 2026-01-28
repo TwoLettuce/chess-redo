@@ -21,7 +21,10 @@ public class SQLDataAccess implements DataAccess {
             """,
 
             """
-            CREATE TABLE IF NOT EXISTS authenticatedUsers (username varchar(255), authToken varchar(255), INDEX (authToken));
+            CREATE TABLE IF NOT EXISTS authenticatedUsers (
+            username varchar(255) NOT NULL,
+            authToken varchar(255) NOT NULL,
+            INDEX (authToken));
             """,
 
             """
@@ -33,6 +36,7 @@ public class SQLDataAccess implements DataAccess {
              PRIMARY KEY (gameID));
             """
     };
+
     public SQLDataAccess() throws DataAccessException {
         initializeDatabase();
     }
@@ -78,17 +82,17 @@ public class SQLDataAccess implements DataAccess {
         }
     }
 
-    private String cryptographizePassword(String password) {
-        return BCrypt.hashpw(password, BCrypt.gensalt());
-    }
-
-    private boolean decryptographizePassword(String password, String crypographizedPassword){
-        return Objects.equals(crypographizedPassword, cryptographizePassword(password));
-    }
-
     @Override
     public void addAuthData(AuthData authData) {
-
+        try (var conn = DatabaseManager.getConnection()){
+            try (var preparedStatement = conn.prepareStatement("INSERT INTO authenticatedUsers (username, authToken) VALUES (?, ?)")){
+                preparedStatement.setString(1, authData.username());
+                preparedStatement.setString(2, authData.authToken());
+                preparedStatement.executeUpdate();
+            }
+        } catch (DataAccessException | SQLException ex){
+            throw new BadRequestException(String.format("Could not add authToken to database: %s", ex.getMessage()));
+        }
     }
 
     @Override
@@ -124,5 +128,13 @@ public class SQLDataAccess implements DataAccess {
     @Override
     public void updateGame(int gameID, GameData updatedGameData) {
 
+    }
+
+    private String cryptographizePassword(String password) {
+        return BCrypt.hashpw(password, BCrypt.gensalt());
+    }
+
+    private boolean decryptographizePassword(String password, String crypographizedPassword){
+        return Objects.equals(crypographizedPassword, cryptographizePassword(password));
     }
 }

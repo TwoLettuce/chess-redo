@@ -1,5 +1,6 @@
 package dataaccess;
 
+import model.AuthData;
 import model.UserData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -45,5 +46,17 @@ public class DataAccessTests {
     @Test
     public void getBadUser() {
         Assertions.assertNull(dataAccess.getUser("fake"));
+    }
+
+    @Test
+    public void addAuthDataTest(){
+        AuthData authData = new AuthData("user", "auoiwj-r923nn2n92nn vi-");
+        Assertions.assertDoesNotThrow(()->dataAccess.addAuthData(authData));
+    }
+
+    @Test
+    public void addBadAuthTest(){
+        AuthData authData = new AuthData(null, null);
+        Assertions.assertThrows(BadRequestException.class, ()->dataAccess.addAuthData(authData));
     }
 }
