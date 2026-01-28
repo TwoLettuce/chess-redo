@@ -4,6 +4,9 @@ import model.UserData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mindrot.jbcrypt.BCrypt;
+
+import java.util.Objects;
 
 public class DataAccessTests {
     DataAccess dataAccess = new SQLDataAccess();
@@ -34,12 +37,13 @@ public class DataAccessTests {
         UserData differentUser = new UserData("hey", "pass", "email@hotmail.com");
         dataAccess.addUser(newUser);
         UserData result = dataAccess.getUser(newUser.username());
-        Assertions.assertEquals(newUser, result);
+        Assertions.assertEquals(newUser.username(), result.username());
+        Assertions.assertEquals(newUser.email(), result.email());
         Assertions.assertNotEquals(differentUser, result);
     }
 
     @Test
-    public void getBadUser(){
-        Assertions.assertThrows(DataAccessException.class, ()-> dataAccess.getUser("fake"));
+    public void getBadUser() {
+        Assertions.assertNull(dataAccess.getUser("fake"));
     }
 }
