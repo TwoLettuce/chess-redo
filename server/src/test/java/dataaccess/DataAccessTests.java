@@ -100,4 +100,15 @@ public class DataAccessTests {
                 Objects.equals(dataAccess.getGames(), new ArrayList<GameData>())
         );
     }
+
+    @Test
+    public void createGameTest(){
+        Assertions.assertEquals(1, dataAccess.newGame("first game"));
+        Assertions.assertEquals(2, dataAccess.newGame("second game"));
+    }
+
+    @Test
+    public void createGameNegativeTest(){
+        Assertions.assertNotEquals(-1, dataAccess.newGame("hey"));
+    }
 }

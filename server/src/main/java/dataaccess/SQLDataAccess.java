@@ -1,5 +1,7 @@
 package dataaccess;
 
+import chess.ChessGame;
+import com.google.gson.Gson;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
@@ -146,7 +148,21 @@ public class SQLDataAccess implements DataAccess {
 
     @Override
     public int newGame(String gameName) {
-        return 0;
+        try (var conn = DatabaseManager.getConnection()){
+            try (var preppedStatement = conn.prepareStatement("INSERT INTO games (gameName, game) VALUES (?, ?)")){
+                preppedStatement.setString(1, gameName);
+                preppedStatement.setString(2, new Gson().toJson(new ChessGame()));
+                preppedStatement.executeUpdate();
+            }
+            try (var preppedStatement = conn.prepareStatement("SELECT gameID FROM games WHERE gameName = ?")){
+                preppedStatement.setString(1, gameName);
+                var result = preppedStatement.executeQuery();
+                result.next();
+                return result.getInt(1);
+            }
+        } catch (DataAccessException | SQLException ex){
+            return -1;
+        }
     }
 
     @Override
