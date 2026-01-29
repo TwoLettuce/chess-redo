@@ -1,12 +1,15 @@
 package dataaccess;
 
 import model.AuthData;
+import model.GameData;
 import model.UserData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mindrot.jbcrypt.BCrypt;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 public class DataAccessTests {
@@ -70,5 +73,31 @@ public class DataAccessTests {
     @Test
     public void getBadAuthTest(){
         Assertions.assertNull(dataAccess.getAuthData("hey"));
+    }
+
+    @Test
+    public void removeAuthTest(){
+        dataAccess.addAuthData(new AuthData("username", "auth"));
+        Assertions.assertDoesNotThrow(()->dataAccess.removeAuth("auth"));
+    }
+
+    @Test
+    public void removeBadAuthTest(){
+        Assertions.assertDoesNotThrow(()->dataAccess.removeAuth("badAuth"));
+    }
+
+    @Test
+    public void clearTest(){
+        UserData user = new UserData("hey there", "pass", "email");
+        dataAccess.addUser(user);
+        AuthData auth = new AuthData("hey there", "lajra;ojewnoinf9 1-2n");
+        dataAccess.addAuthData(auth);
+        dataAccess.newGame("hey");
+        dataAccess.clear();
+        Assertions.assertTrue(
+                dataAccess.getUser(user.username())==null &&
+                dataAccess.getAuthData(auth.authToken())==null &&
+                Objects.equals(dataAccess.getGames(), new ArrayList<GameData>())
+        );
     }
 }

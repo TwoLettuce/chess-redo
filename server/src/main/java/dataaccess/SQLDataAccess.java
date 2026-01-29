@@ -37,6 +37,18 @@ public class SQLDataAccess implements DataAccess {
             """
     };
 
+    String[] tableClearStatements = {
+            """
+            TRUNCATE TABLE users;
+            """,
+            """
+            TRUNCATE TABLE authenticatedUsers
+            """,
+            """
+            TRUNCATE TABLE games;
+            """
+    };
+
     public SQLDataAccess() throws DataAccessException {
         initializeDatabase();
     }
@@ -111,12 +123,25 @@ public class SQLDataAccess implements DataAccess {
 
     @Override
     public void removeAuth(String authToken) {
-
+        try (var conn = DatabaseManager.getConnection()){
+            try (var preparedStatement = conn.prepareStatement("DELETE FROM authenticatedUsers WHERE authToken = ?")){
+                preparedStatement.setString(1, authToken);
+                preparedStatement.executeUpdate();
+            }
+        } catch (DataAccessException | SQLException ex){
+            throw new BadRequestException(String.format("Database error: %s", ex.getMessage()));
+        }
     }
 
     @Override
     public void clear() {
-
+        try (var conn = DatabaseManager.getConnection()){
+            for (String sqlStatement : tableClearStatements){
+                try (var preppedStatement = conn.prepareStatement(sqlStatement)){
+                    preppedStatement.executeUpdate();
+                }
+            }
+        } catch (SQLException | DataAccessException ex){}
     }
 
     @Override
