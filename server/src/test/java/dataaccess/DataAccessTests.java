@@ -1,5 +1,6 @@
 package dataaccess;
 
+import chess.ChessGame;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
@@ -110,5 +111,23 @@ public class DataAccessTests {
     @Test
     public void createGameNegativeTest(){
         Assertions.assertNotEquals(-1, dataAccess.newGame("hey"));
+    }
+
+    @Test
+    public void listGamesTest(){
+        ArrayList<GameData> games = new ArrayList<>();
+        games.add(new GameData(1, null, null, "first game", new ChessGame()));
+        games.add(new GameData(2, null, null, "second game", new ChessGame()));
+        games.add(new GameData(3, null, null, "third game", new ChessGame()));
+        dataAccess.newGame("first game");
+        dataAccess.newGame("second game");
+        dataAccess.newGame("third game");
+
+        Assertions.assertEquals(games, dataAccess.getGames());
+    }
+
+    @Test
+    public void listNoGames(){
+        Assertions.assertEquals(List.of(), dataAccess.getGames());
     }
 }

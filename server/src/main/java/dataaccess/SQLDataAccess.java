@@ -8,12 +8,13 @@ import model.UserData;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
 public class SQLDataAccess implements DataAccess {
-
+    Gson gson = new Gson();
     String[] tableInitializationStatements = {
             """
             CREATE TABLE IF NOT EXISTS users (username varchar(255) NOT NULL,
@@ -151,7 +152,7 @@ public class SQLDataAccess implements DataAccess {
         try (var conn = DatabaseManager.getConnection()){
             try (var preppedStatement = conn.prepareStatement("INSERT INTO games (gameName, game) VALUES (?, ?)")){
                 preppedStatement.setString(1, gameName);
-                preppedStatement.setString(2, new Gson().toJson(new ChessGame()));
+                preppedStatement.setString(2, gson.toJson(new ChessGame()));
                 preppedStatement.executeUpdate();
             }
             try (var preppedStatement = conn.prepareStatement("SELECT gameID FROM games WHERE gameName = ?")){
@@ -167,7 +168,24 @@ public class SQLDataAccess implements DataAccess {
 
     @Override
     public Collection<GameData> getGames() {
-        return List.of();
+        try (var conn = DatabaseManager.getConnection()){
+            try (var preppedStatement = conn.prepareStatement("SELECT * FROM games")){
+                var result = preppedStatement.executeQuery();
+                ArrayList<GameData> games = new ArrayList<>();
+                while (result.next()){
+                    int gameID = result.getInt(1);
+                    String whiteUsername = result.getString(2);
+                    String blackUsername = result.getString(3);
+                    String gameName = result.getString(4);
+                    String chessGameAsJson = result.getString(5);
+                    ChessGame chessGame = gson.fromJson(chessGameAsJson, ChessGame.class);
+                    games.add(new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame));
+                }
+                return games;
+            }
+        } catch (SQLException | DataAccessException ex){
+            return List.of();
+        }
     }
 
     @Override
