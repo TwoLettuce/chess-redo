@@ -1,9 +1,6 @@
 package service;
 
-import dataaccess.AlreadyTakenException;
-import dataaccess.DataAccess;
-import dataaccess.GameNotFoundException;
-import dataaccess.NotLoggedInException;
+import dataaccess.*;
 import model.GameData;
 import model.JoinRequest;
 
@@ -18,21 +15,21 @@ public class GameService {
         this.dataAccess = dataAccess;
     }
 
-    public int createGame(String authToken, String gameName) throws NotLoggedInException {
+    public int createGame(String authToken, String gameName) throws NotLoggedInException, InternalServerErrorException {
         if (dataAccess.getAuthData(authToken) == null){
             throw new NotLoggedInException("Error: unauthorized");
         }
         return dataAccess.newGame(gameName);
     }
 
-    public Collection<GameData> listGames(String authToken) throws NotLoggedInException {
+    public Collection<GameData> listGames(String authToken) throws NotLoggedInException, InternalServerErrorException {
         if (dataAccess.getAuthData(authToken) == null){
             throw new NotLoggedInException("Error: unauthorized");
         }
         return dataAccess.getGames();
     }
 
-    public void joinGame(String authToken, JoinRequest joinRequest) throws NotLoggedInException, AlreadyTakenException, GameNotFoundException {
+    public void joinGame(String authToken, JoinRequest joinRequest) throws NotLoggedInException, AlreadyTakenException, GameNotFoundException, BadRequestException, InternalServerErrorException {
         if (dataAccess.getAuthData(authToken) == null){
             throw new NotLoggedInException("Error: unauthorized");
         }

@@ -22,7 +22,14 @@ import java.util.Objects;
 public class Server {
 
     private final Javalin javalin;
-    private final DataAccess dataAccess = new MemoryDataAccess();
+    private final DataAccess dataAccess;
+    {
+        try {
+            dataAccess = new SQLDataAccess();
+        } catch (DataAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
     private final DataService dataService = new DataService(dataAccess);
     private final UserService userService = new UserService(dataAccess);
     private final GameService gameService = new GameService(dataAccess);
@@ -43,7 +50,12 @@ public class Server {
     }
 
     private void clear(Context ctx){
-        dataService.clear();
+        try {
+            dataService.clear();
+        } catch (InternalServerErrorException ex) {
+            ctx.status(ex.httpCode);
+            ctx.result(gson.toJson(Map.of("message", ex.getMessage())));
+        }
     }
 
     private void register(Context ctx){
@@ -57,6 +69,9 @@ public class Server {
             AuthData authData = userService.registerUser(newUser);
             ctx.result(gson.toJson(authData));
         } catch (AlreadyTakenException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (BadRequestException ex) {
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
         }
@@ -73,6 +88,9 @@ public class Server {
             AuthData authData = userService.login(loginRequest);
             ctx.result(gson.toJson(authData));
         } catch (UserNotFoundException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (BadRequestException ex) {
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
         }
@@ -96,6 +114,9 @@ public class Server {
         } catch (NotLoggedInException ex) {
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (InternalServerErrorException ex){
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
         }
     }
 
@@ -111,6 +132,9 @@ public class Server {
             int gameID = gameService.createGame(authToken, gameName);
             ctx.result(gson.toJson(Map.of("gameID", gameID)));
         } catch (NotLoggedInException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (InternalServerErrorException ex){
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
         }
@@ -133,6 +157,12 @@ public class Server {
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
         } catch (GameNotFoundException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (BadRequestException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (InternalServerErrorException ex){
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
         }

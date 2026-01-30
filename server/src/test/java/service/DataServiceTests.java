@@ -1,6 +1,7 @@
 package service;
 
 import dataaccess.AlreadyTakenException;
+import dataaccess.BadRequestException;
 import dataaccess.DataAccessException;
 import dataaccess.MemoryDataAccess;
 import model.UserData;
@@ -14,7 +15,7 @@ public class DataServiceTests {
 
 
     @Test
-    public void testClear() throws AlreadyTakenException {
+    public void testClear() throws AlreadyTakenException, BadRequestException {
         userService.registerUser(new UserData("user1", "pass1", "email1"));
         Assertions.assertDoesNotThrow(dataService::clear);
         Assertions.assertNull(dataAccess.getUser("user1"));

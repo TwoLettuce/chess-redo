@@ -2,16 +2,16 @@ package dataaccess;
 
 import chess.ChessGame;
 import com.google.gson.Gson;
+import io.javalin.http.InternalServerErrorResponse;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
-import org.mindrot.jbcrypt.BCrypt;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 public class SQLDataAccess implements DataAccess {
     Gson gson = new Gson();
@@ -65,7 +65,7 @@ public class SQLDataAccess implements DataAccess {
                 }
             }
         } catch (SQLException ex) {
-            throw new DataAccessException(String.format("Error: Could not configure database %s", ex.getMessage()));
+            throw new InternalServerErrorException(String.format("Error: Could not configure database %s", ex.getMessage()));
         }
     }
 
@@ -88,7 +88,7 @@ public class SQLDataAccess implements DataAccess {
         try (var conn = DatabaseManager.getConnection()){
             try (var preparedStatement = conn.prepareStatement("INSERT INTO users (username, password, email) VALUES (?, ?, ?)")){
                 preparedStatement.setString(1, userData.username());
-                preparedStatement.setString(2, cryptographizePassword(userData.password()));
+                preparedStatement.setString(2, userData.password());
                 preparedStatement.setString(3, userData.email());
                 preparedStatement.executeUpdate();
             }
@@ -98,7 +98,7 @@ public class SQLDataAccess implements DataAccess {
     }
 
     @Override
-    public void addAuthData(AuthData authData) {
+    public void addAuthData(AuthData authData) throws BadRequestException {
         try (var conn = DatabaseManager.getConnection()){
             try (var preparedStatement = conn.prepareStatement("INSERT INTO authenticatedUsers (username, authToken) VALUES (?, ?)")){
                 preparedStatement.setString(1, authData.username());
@@ -106,7 +106,7 @@ public class SQLDataAccess implements DataAccess {
                 preparedStatement.executeUpdate();
             }
         } catch (DataAccessException | SQLException ex){
-            throw new BadRequestException(String.format("Could not add authToken to database: %s", ex.getMessage()));
+            throw new BadRequestException(String.format("Could not add authData to database: %s", ex.getMessage()));
         }
     }
 
@@ -132,23 +132,25 @@ public class SQLDataAccess implements DataAccess {
                 preparedStatement.executeUpdate();
             }
         } catch (DataAccessException | SQLException ex){
-            throw new BadRequestException(String.format("Database error: %s", ex.getMessage()));
+            throw new RuntimeException(String.format("Database error: %s", ex.getMessage()));
         }
     }
 
     @Override
-    public void clear() {
+    public void clear() throws InternalServerErrorException {
         try (var conn = DatabaseManager.getConnection()){
             for (String sqlStatement : tableClearStatements){
                 try (var preppedStatement = conn.prepareStatement(sqlStatement)){
                     preppedStatement.executeUpdate();
                 }
             }
-        } catch (SQLException | DataAccessException ex){}
+        } catch (SQLException | DataAccessException ex){
+            throw new InternalServerErrorException("Error: Server took the L");
+        }
     }
 
     @Override
-    public int newGame(String gameName) {
+    public int newGame(String gameName) throws InternalServerErrorException {
         try (var conn = DatabaseManager.getConnection()){
             try (var preppedStatement = conn.prepareStatement("INSERT INTO games (gameName, game) VALUES (?, ?)")){
                 preppedStatement.setString(1, gameName);
@@ -161,48 +163,73 @@ public class SQLDataAccess implements DataAccess {
                 result.next();
                 return result.getInt(1);
             }
-        } catch (DataAccessException | SQLException ex){
+        } catch (DataAccessException ex){
             return -1;
+        } catch (SQLException ex){
+            throw new InternalServerErrorException("Error: Server took the L");
         }
     }
 
     @Override
-    public Collection<GameData> getGames() {
+    public Collection<GameData> getGames() throws InternalServerErrorException {
         try (var conn = DatabaseManager.getConnection()){
             try (var preppedStatement = conn.prepareStatement("SELECT * FROM games")){
                 var result = preppedStatement.executeQuery();
                 ArrayList<GameData> games = new ArrayList<>();
                 while (result.next()){
-                    int gameID = result.getInt(1);
-                    String whiteUsername = result.getString(2);
-                    String blackUsername = result.getString(3);
-                    String gameName = result.getString(4);
-                    String chessGameAsJson = result.getString(5);
-                    ChessGame chessGame = gson.fromJson(chessGameAsJson, ChessGame.class);
-                    games.add(new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame));
+                    games.add(buildGameDataFromResultSet(result));
                 }
                 return games;
             }
-        } catch (SQLException | DataAccessException ex){
+        } catch (DataAccessException ex){
             return List.of();
+        } catch (SQLException ex){
+            throw new InternalServerErrorException("Error: Server took the L");
         }
     }
 
     @Override
-    public GameData getGame(int gameID) {
-        return null;
+    public GameData getGame(int gameID) throws InternalServerErrorException {
+        try (var conn = DatabaseManager.getConnection()){
+            try (var preppedStatement = conn.prepareStatement("SELECT * FROM games WHERE gameID = ?")){
+                preppedStatement.setInt(1, gameID);
+                var result = preppedStatement.executeQuery();
+                result.next();
+                return buildGameDataFromResultSet(result);
+            }
+        } catch (DataAccessException ex){
+            return null;
+        } catch (SQLException ex){
+            throw new InternalServerErrorException("Error: Server took the L");
+        }
     }
 
     @Override
-    public void updateGame(int gameID, GameData updatedGameData) {
-
+    public void updateGame(int gameID, GameData updatedGameData) throws BadRequestException, InternalServerErrorException {
+        try (var conn = DatabaseManager.getConnection()){
+            try (var preppedStatement = conn.prepareStatement("UPDATE games SET whiteUsername = ?, blackUsername = ?, game = ? WHERE gameid = ?")){
+                preppedStatement.setString(1, updatedGameData.whiteUsername());
+                preppedStatement.setString(2, updatedGameData.blackUsername());
+                preppedStatement.setString(3, gson.toJson(updatedGameData.game()));
+                preppedStatement.setInt(4, gameID);
+                if (preppedStatement.executeUpdate()==0){
+                    throw new DataAccessException("gameID not found");
+                }
+            }
+        } catch (DataAccessException ex){
+            throw new BadRequestException("Error: " + ex.getMessage());
+        } catch (SQLException ex){
+            throw new InternalServerErrorException("Error: Server took the L");
+        }
     }
 
-    private String cryptographizePassword(String password) {
-        return BCrypt.hashpw(password, BCrypt.gensalt());
-    }
-
-    private boolean decryptographizePassword(String password, String crypographizedPassword){
-        return Objects.equals(crypographizedPassword, cryptographizePassword(password));
+    private GameData buildGameDataFromResultSet(ResultSet result) throws SQLException {
+        int gameID = result.getInt(1);
+        String whiteUsername = result.getString(2);
+        String blackUsername = result.getString(3);
+        String gameName = result.getString(4);
+        String chessGameAsJson = result.getString(5);
+        ChessGame chessGame = gson.fromJson(chessGameAsJson, ChessGame.class);
+        return  new GameData(gameID, whiteUsername, blackUsername, gameName, chessGame);
     }
 }

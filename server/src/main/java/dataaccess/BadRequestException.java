@@ -1,6 +1,6 @@
 package dataaccess;
 
-public class BadRequestException extends RuntimeException {
+public class BadRequestException extends DataAccessException {
     public int httpCode = 400;
     public BadRequestException(String message) {
         super(message);

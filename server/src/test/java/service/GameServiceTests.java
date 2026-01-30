@@ -1,10 +1,7 @@
 package service;
 
 import chess.ChessGame;
-import dataaccess.AlreadyTakenException;
-import dataaccess.GameNotFoundException;
-import dataaccess.MemoryDataAccess;
-import dataaccess.NotLoggedInException;
+import dataaccess.*;
 import model.GameData;
 import model.JoinRequest;
 import model.UserData;
@@ -25,12 +22,12 @@ public class GameServiceTests {
 
     @BeforeEach
     @AfterEach
-    public void clear(){
+    public void clear() throws InternalServerErrorException {
         dataService.clear();
     }
 
     @Test
-    public void createGame() throws AlreadyTakenException {
+    public void createGame() throws AlreadyTakenException, BadRequestException {
         UserData sampleUser = new UserData("user1", "pass", "email");
         String authToken = userService.registerUser(sampleUser).authToken();
         Assertions.assertDoesNotThrow(() -> gameService.createGame(authToken, "new game"));
@@ -42,7 +39,7 @@ public class GameServiceTests {
     }
 
     @Test
-    public void createHundredGames() throws AlreadyTakenException, NotLoggedInException {
+    public void createHundredGames() throws AlreadyTakenException, NotLoggedInException, BadRequestException, InternalServerErrorException {
         UserData sampleUser = new UserData("user1", "pass", "email");
         String authToken = userService.registerUser(sampleUser).authToken();
 
@@ -59,7 +56,7 @@ public class GameServiceTests {
 
 
     @Test
-    public void createAndListGame() throws AlreadyTakenException, NotLoggedInException {
+    public void createAndListGame() throws AlreadyTakenException, NotLoggedInException, BadRequestException, InternalServerErrorException {
         UserData sampleUser = new UserData("user1", "pass", "email");
         String authToken = userService.registerUser(sampleUser).authToken();
         gameService.createGame(authToken, "new game");
@@ -76,7 +73,7 @@ public class GameServiceTests {
     }
 
     @Test
-    public void joinAsWhite() throws AlreadyTakenException, NotLoggedInException {
+    public void joinAsWhite() throws AlreadyTakenException, NotLoggedInException, BadRequestException, InternalServerErrorException {
         UserData sampleUser = new UserData("user1", "pass", "email");
         String authToken = userService.registerUser(sampleUser).authToken();
         gameService.createGame(authToken, "new game");
@@ -88,7 +85,7 @@ public class GameServiceTests {
     }
 
     @Test
-    public void joinAlreadyTaken() throws AlreadyTakenException, NotLoggedInException, GameNotFoundException {
+    public void joinAlreadyTaken() throws AlreadyTakenException, NotLoggedInException, GameNotFoundException, BadRequestException, InternalServerErrorException {
         UserData sampleUser = new UserData("user1", "pass", "email");
         UserData sadUser = new UserData("fred", "contraseña", "email");
         String auth1 = userService.registerUser(sampleUser).authToken();

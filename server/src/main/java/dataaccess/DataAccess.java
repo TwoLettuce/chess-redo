@@ -17,13 +17,13 @@ public interface DataAccess {
 
     void removeAuth(String authToken);
 
-    void clear();
+    void clear() throws InternalServerErrorException;
 
-    int newGame(String gameName);
+    int newGame(String gameName) throws InternalServerErrorException;
 
-    Collection<GameData> getGames();
+    Collection<GameData> getGames() throws InternalServerErrorException;
 
-    GameData getGame(int gameID);
+    GameData getGame(int gameID) throws InternalServerErrorException;
 
-    void updateGame(int gameID, GameData updatedGameData);
+    void updateGame(int gameID, GameData updatedGameData) throws BadRequestException, InternalServerErrorException;
 }

@@ -1,6 +1,7 @@
 package service;
 
 import dataaccess.DataAccess;
+import dataaccess.InternalServerErrorException;
 
 public class DataService {
 
@@ -10,7 +11,7 @@ public class DataService {
         this.dataAccess = dataAccess;
     }
 
-    public void clear() {
+    public void clear() throws InternalServerErrorException {
         dataAccess.clear();
     }
 }

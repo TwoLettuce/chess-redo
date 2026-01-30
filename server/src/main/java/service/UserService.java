@@ -3,6 +3,7 @@ package service;
 import dataaccess.*;
 import model.AuthData;
 import model.UserData;
+import org.mindrot.jbcrypt.BCrypt;
 import request.LoginRequest;
 
 import java.util.Objects;
@@ -19,15 +20,16 @@ public class UserService {
         if (dataAccess.getUser(userData.username()) != null){
             throw new AlreadyTakenException("Error: already taken");
         }
-        dataAccess.addUser(userData);
+        UserData encryptedUserData = new UserData(userData.username(), cryptographizePassword(userData.password()), userData.email());
+        dataAccess.addUser(encryptedUserData);
         AuthData authData = new AuthData(userData.username(), generateToken());
         dataAccess.addAuthData(authData);
         return authData;
     }
 
-    public AuthData login(LoginRequest loginRequest) throws UserNotFoundException {
+    public AuthData login(LoginRequest loginRequest) throws BadRequestException, UserNotFoundException {
         if (dataAccess.getUser(loginRequest.username()) == null ||
-                !Objects.equals(dataAccess.getUser(loginRequest.username()).password(), loginRequest.password())){
+                !decryptographizePassword(loginRequest.password(), dataAccess.getUser(loginRequest.username()).password())){
             throw new UserNotFoundException("Error: unauthorized");
         }
         AuthData authData = new AuthData(loginRequest.username(), generateToken());
@@ -44,5 +46,13 @@ public class UserService {
 
     private String generateToken() {
         return UUID.randomUUID().toString();
+    }
+
+    private String cryptographizePassword(String password) {
+        return BCrypt.hashpw(password, BCrypt.gensalt());
+    }
+
+    private boolean decryptographizePassword(String password, String crypographizedPassword){
+        return BCrypt.checkpw(password, crypographizedPassword);
     }
 }
