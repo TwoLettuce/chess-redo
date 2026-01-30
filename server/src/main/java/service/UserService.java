@@ -16,7 +16,7 @@ public class UserService {
         this.dataAccess = dataAccess;
     }
 
-    public AuthData registerUser(UserData userData) throws AlreadyTakenException, BadRequestException {
+    public AuthData registerUser(UserData userData) throws AlreadyTakenException, BadRequestException, InternalServerErrorException {
         if (dataAccess.getUser(userData.username()) != null){
             throw new AlreadyTakenException("Error: already taken");
         }
@@ -27,7 +27,7 @@ public class UserService {
         return authData;
     }
 
-    public AuthData login(LoginRequest loginRequest) throws BadRequestException, UserNotFoundException {
+    public AuthData login(LoginRequest loginRequest) throws BadRequestException, UserNotFoundException, InternalServerErrorException {
         if (dataAccess.getUser(loginRequest.username()) == null ||
                 !decryptographizePassword(loginRequest.password(), dataAccess.getUser(loginRequest.username()).password())){
             throw new UserNotFoundException("Error: unauthorized");
@@ -37,7 +37,7 @@ public class UserService {
         return authData;
     }
 
-    public void logout(String authToken) throws NotLoggedInException {
+    public void logout(String authToken) throws NotLoggedInException, InternalServerErrorException {
         if (dataAccess.getAuthData(authToken) == null){
             throw new NotLoggedInException("Error: unauthorized");
         }

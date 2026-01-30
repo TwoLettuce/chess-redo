@@ -7,15 +7,15 @@ import model.UserData;
 import java.util.Collection;
 
 public interface DataAccess {
-    UserData getUser(String username);
+    UserData getUser(String username) throws InternalServerErrorException;
 
-    void addUser(UserData userData) throws BadRequestException;
+    void addUser(UserData userData) throws BadRequestException, InternalServerErrorException;
 
-    void addAuthData(AuthData authData) throws BadRequestException;
+    void addAuthData(AuthData authData) throws BadRequestException, InternalServerErrorException;
 
-    AuthData getAuthData(String authToken);
+    AuthData getAuthData(String authToken) throws InternalServerErrorException;
 
-    void removeAuth(String authToken);
+    void removeAuth(String authToken) throws InternalServerErrorException;
 
     void clear() throws InternalServerErrorException;
 

@@ -74,6 +74,9 @@ public class Server {
         } catch (BadRequestException ex) {
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (InternalServerErrorException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
         }
     }
 
@@ -93,6 +96,9 @@ public class Server {
         } catch (BadRequestException ex) {
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (InternalServerErrorException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
         }
     }
 
@@ -101,6 +107,9 @@ public class Server {
         try {
             userService.logout(authToken);
         } catch (NotLoggedInException ex) {
+            ctx.status(ex.httpCode);
+            ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
+        } catch (InternalServerErrorException ex) {
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));
         }

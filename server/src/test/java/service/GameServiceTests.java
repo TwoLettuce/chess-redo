@@ -27,7 +27,7 @@ public class GameServiceTests {
     }
 
     @Test
-    public void createGame() throws AlreadyTakenException, BadRequestException {
+    public void createGame() throws AlreadyTakenException, BadRequestException, InternalServerErrorException {
         UserData sampleUser = new UserData("user1", "pass", "email");
         String authToken = userService.registerUser(sampleUser).authToken();
         Assertions.assertDoesNotThrow(() -> gameService.createGame(authToken, "new game"));

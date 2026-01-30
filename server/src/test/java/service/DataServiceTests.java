@@ -1,9 +1,6 @@
 package service;
 
-import dataaccess.AlreadyTakenException;
-import dataaccess.BadRequestException;
-import dataaccess.DataAccessException;
-import dataaccess.MemoryDataAccess;
+import dataaccess.*;
 import model.UserData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -15,7 +12,7 @@ public class DataServiceTests {
 
 
     @Test
-    public void testClear() throws AlreadyTakenException, BadRequestException {
+    public void testClear() throws AlreadyTakenException, BadRequestException, InternalServerErrorException {
         userService.registerUser(new UserData("user1", "pass1", "email1"));
         Assertions.assertDoesNotThrow(dataService::clear);
         Assertions.assertNull(dataAccess.getUser("user1"));

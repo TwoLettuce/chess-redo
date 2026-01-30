@@ -39,7 +39,7 @@ public class DataAccessTests {
     }
 
     @Test
-    public void getUserTest() throws BadRequestException {
+    public void getUserTest() throws BadRequestException, InternalServerErrorException {
         UserData newUser = new UserData("hi", "password", "hipassword@gmail.com");
         UserData differentUser = new UserData("hey", "pass", "email@hotmail.com");
         dataAccess.addUser(newUser);
@@ -50,7 +50,7 @@ public class DataAccessTests {
     }
 
     @Test
-    public void getBadUser() {
+    public void getBadUser() throws InternalServerErrorException {
         Assertions.assertNull(dataAccess.getUser("fake"));
     }
 
@@ -67,19 +67,19 @@ public class DataAccessTests {
     }
 
     @Test
-    public void getAuthTest() throws BadRequestException {
+    public void getAuthTest() throws BadRequestException, InternalServerErrorException {
         AuthData authData = new AuthData("user", "auoiwj-r923nn2n92nn vi-");
         dataAccess.addAuthData(authData);
         Assertions.assertEquals(authData, dataAccess.getAuthData(authData.authToken()));
     }
 
     @Test
-    public void getBadAuthTest(){
+    public void getBadAuthTest() throws InternalServerErrorException {
         Assertions.assertNull(dataAccess.getAuthData("hey"));
     }
 
     @Test
-    public void removeAuthTest() throws BadRequestException {
+    public void removeAuthTest() throws BadRequestException, InternalServerErrorException {
         dataAccess.addAuthData(new AuthData("username", "auth"));
         Assertions.assertDoesNotThrow(()->dataAccess.removeAuth("auth"));
     }

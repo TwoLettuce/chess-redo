@@ -38,21 +38,21 @@ public class UserServiceTests {
 
 
     @Test
-    public void loginNormal() throws AlreadyTakenException, BadRequestException {
+    public void loginNormal() throws AlreadyTakenException, BadRequestException, InternalServerErrorException {
         UserData user1 = new UserData("user1", "password1", "email1");
         userService.registerUser(user1);
         Assertions.assertDoesNotThrow(()-> userService.login(new LoginRequest("user1", "password1")));
     }
 
     @Test
-    public void loginWrongCredentials() throws AlreadyTakenException, BadRequestException {
+    public void loginWrongCredentials() throws AlreadyTakenException, BadRequestException, InternalServerErrorException {
         UserData user1 = new UserData("user1", "password1", "email1");
         userService.registerUser(user1);
         Assertions.assertThrows(UserNotFoundException.class, ()-> userService.login(new LoginRequest("user1", "password2")));
     }
 
     @Test
-    public void logoutNormal() throws AlreadyTakenException, BadRequestException {
+    public void logoutNormal() throws AlreadyTakenException, BadRequestException, InternalServerErrorException {
         UserData user1 = new UserData("user1", "password1", "email1");
         String authToken = userService.registerUser(user1).authToken();
         Assertions.assertDoesNotThrow(() -> userService.logout(authToken));

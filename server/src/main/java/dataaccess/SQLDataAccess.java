@@ -70,21 +70,24 @@ public class SQLDataAccess implements DataAccess {
     }
 
     @Override
-    public UserData getUser(String username) {
+    public UserData getUser(String username) throws InternalServerErrorException {
         try (var conn = DatabaseManager.getConnection()){
             try (var preppedStatement = conn.prepareStatement("SELECT * FROM users WHERE username = ?")){
                 preppedStatement.setString(1, username);
                 var result = preppedStatement.executeQuery();
-                result.next();
-                return new UserData(result.getString(1), result.getString(2), result.getString(3));
+                if (result.next()){
+                    return new UserData(result.getString(1), result.getString(2), result.getString(3));
+                } else {
+                    return null;
+                }
             }
-        } catch (SQLException | DataAccessException ex){
-            return null;
+        } catch (DataAccessException | SQLException ex){
+            throw new InternalServerErrorException("Error: Server took the L");
         }
     }
 
     @Override
-    public void addUser(UserData userData) throws BadRequestException {
+    public void addUser(UserData userData) throws BadRequestException, InternalServerErrorException {
         try (var conn = DatabaseManager.getConnection()){
             try (var preparedStatement = conn.prepareStatement("INSERT INTO users (username, password, email) VALUES (?, ?, ?)")){
                 preparedStatement.setString(1, userData.username());
@@ -93,46 +96,52 @@ public class SQLDataAccess implements DataAccess {
                 preparedStatement.executeUpdate();
             }
         } catch (DataAccessException | SQLException ex){
-            throw new BadRequestException(String.format("Could not add user: %s", ex.getMessage()));
+            throw new InternalServerErrorException("Error: Server took the L");
         }
     }
 
     @Override
-    public void addAuthData(AuthData authData) throws BadRequestException {
+    public void addAuthData(AuthData authData) throws BadRequestException, InternalServerErrorException {
         try (var conn = DatabaseManager.getConnection()){
             try (var preparedStatement = conn.prepareStatement("INSERT INTO authenticatedUsers (username, authToken) VALUES (?, ?)")){
                 preparedStatement.setString(1, authData.username());
                 preparedStatement.setString(2, authData.authToken());
                 preparedStatement.executeUpdate();
             }
-        } catch (DataAccessException | SQLException ex){
+        } catch (DataAccessException ex){
             throw new BadRequestException(String.format("Could not add authData to database: %s", ex.getMessage()));
+        } catch (SQLException ex){
+            throw new InternalServerErrorException("Error: Server took the L");
         }
     }
 
     @Override
-    public AuthData getAuthData(String authToken) {
+    public AuthData getAuthData(String authToken) throws InternalServerErrorException {
         try (var conn = DatabaseManager.getConnection()){
             try (var preparedStatement = conn.prepareStatement("SELECT username FROM authenticatedUsers WHERE authToken = ?")){
                 preparedStatement.setString(1, authToken);
                 var result = preparedStatement.executeQuery();
-                result.next();
-                return new AuthData(result.getString(1), authToken);
+                if (result.next()){
+                    return new AuthData(result.getString(1), authToken);
+                }
+                return null;
             }
         } catch (DataAccessException | SQLException ex){
-            return null;
+            throw new InternalServerErrorException("Error: Server took the L");
         }
     }
 
     @Override
-    public void removeAuth(String authToken) {
+    public void removeAuth(String authToken) throws InternalServerErrorException {
         try (var conn = DatabaseManager.getConnection()){
             try (var preparedStatement = conn.prepareStatement("DELETE FROM authenticatedUsers WHERE authToken = ?")){
                 preparedStatement.setString(1, authToken);
                 preparedStatement.executeUpdate();
             }
-        } catch (DataAccessException | SQLException ex){
+        } catch (DataAccessException ex){
             throw new RuntimeException(String.format("Database error: %s", ex.getMessage()));
+        } catch (SQLException ex){
+            throw new InternalServerErrorException("Error: Server took the L");
         }
     }
 
@@ -163,9 +172,7 @@ public class SQLDataAccess implements DataAccess {
                 result.next();
                 return result.getInt(1);
             }
-        } catch (DataAccessException ex){
-            return -1;
-        } catch (SQLException ex){
+        } catch (DataAccessException | SQLException ex){
             throw new InternalServerErrorException("Error: Server took the L");
         }
     }
@@ -181,9 +188,7 @@ public class SQLDataAccess implements DataAccess {
                 }
                 return games;
             }
-        } catch (DataAccessException ex){
-            return List.of();
-        } catch (SQLException ex){
+        } catch (DataAccessException | SQLException ex){
             throw new InternalServerErrorException("Error: Server took the L");
         }
     }
@@ -191,11 +196,14 @@ public class SQLDataAccess implements DataAccess {
     @Override
     public GameData getGame(int gameID) throws InternalServerErrorException {
         try (var conn = DatabaseManager.getConnection()){
-            try (var preppedStatement = conn.prepareStatement("SELECT * FROM games WHERE gameID = ?")){
+            try (var preppedStatement = conn.prepareStatement("SELECT * FROM games WHERE gameID = ?")) {
                 preppedStatement.setInt(1, gameID);
                 var result = preppedStatement.executeQuery();
-                result.next();
-                return buildGameDataFromResultSet(result);
+                if (result.next()){
+                    return buildGameDataFromResultSet(result);
+                } else {
+                    return null;
+                }
             }
         } catch (DataAccessException ex){
             return null;
