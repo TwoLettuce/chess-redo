@@ -85,7 +85,12 @@ public class GameServiceTests {
     }
 
     @Test
-    public void joinAlreadyTaken() throws AlreadyTakenException, NotLoggedInException, GameNotFoundException, BadRequestException, InternalServerErrorException {
+    public void joinAlreadyTaken()
+            throws AlreadyTakenException,
+            NotLoggedInException,
+            GameNotFoundException,
+            BadRequestException,
+            InternalServerErrorException {
         UserData sampleUser = new UserData("user1", "pass", "email");
         UserData sadUser = new UserData("fred", "contraseña", "email");
         String auth1 = userService.registerUser(sampleUser).authToken();

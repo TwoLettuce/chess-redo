@@ -29,7 +29,12 @@ public class GameService {
         return dataAccess.getGames();
     }
 
-    public void joinGame(String authToken, JoinRequest joinRequest) throws NotLoggedInException, AlreadyTakenException, GameNotFoundException, BadRequestException, InternalServerErrorException {
+    public void joinGame(String authToken, JoinRequest joinRequest)
+            throws NotLoggedInException,
+            AlreadyTakenException,
+            GameNotFoundException,
+            BadRequestException,
+            InternalServerErrorException {
         if (dataAccess.getAuthData(authToken) == null){
             throw new NotLoggedInException("Error: unauthorized");
         }
