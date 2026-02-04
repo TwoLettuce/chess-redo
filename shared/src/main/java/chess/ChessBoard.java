@@ -127,30 +127,16 @@ public class ChessBoard {
         StringBuilder boardAsString = new StringBuilder();
         for (int row = 7; row >= 0; row --){
             for (int col = 0; col < 8; col ++){
-                boardAsString.append(pieceToChar(board[row][col])).append(" ");
+                if (board[row][col] != null){
+                    boardAsString.append("- ");
+                } else {
+                    boardAsString.append(board[row][col].toString()).append(" ");
+                }
             }
             boardAsString.append("\n");
         }
         return boardAsString.toString();
     }
 
-    private String pieceToChar(ChessPiece piece){
-        String pieceAsString;
-        if (piece == null){
-            return "-";
-        }
-        switch (piece.getPieceType()){
-            case PAWN -> pieceAsString = "p";
-            case ROOK -> pieceAsString = "r";
-            case BISHOP -> pieceAsString = "b";
-            case KNIGHT -> pieceAsString = "n";
-            case KING -> pieceAsString = "k";
-            case QUEEN -> pieceAsString = "q";
-            default -> pieceAsString = "-";
-        }
-        if (!pieceAsString.equals("-") && piece.getTeamColor() == ChessGame.TeamColor.WHITE){
-            return pieceAsString.toUpperCase();
-        }
-        return pieceAsString;
-    }
+
 }

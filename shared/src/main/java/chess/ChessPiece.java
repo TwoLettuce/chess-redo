@@ -80,4 +80,22 @@ public class ChessPiece {
     public int hashCode() {
         return Objects.hash(type, color);
     }
+
+    @Override
+    public String toString() {
+        String pieceAsString;
+        switch (getPieceType()){
+            case PAWN -> pieceAsString = "p";
+            case ROOK -> pieceAsString = "r";
+            case BISHOP -> pieceAsString = "b";
+            case KNIGHT -> pieceAsString = "n";
+            case KING -> pieceAsString = "k";
+            case QUEEN -> pieceAsString = "q";
+            default -> pieceAsString = "-";
+        }
+        if (getTeamColor() == ChessGame.TeamColor.WHITE){
+            return pieceAsString.toUpperCase();
+        }
+        return pieceAsString;
+    }
 }
