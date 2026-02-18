@@ -26,7 +26,7 @@ public class ServerFacade {
     }
 
     public String register(UserData userData) throws Exception {
-        HttpRequest req = buildRequest("/user", "POST", userData);
+        HttpRequest req = buildRequest("/user", "POST", userData, null);
         HttpResponse<String> response = sendRequest(req);
         if (response != null && wasSuccessful(response.statusCode())){
             return gson.fromJson(response.body(), Map.class).get("authToken").toString();
@@ -35,7 +35,7 @@ public class ServerFacade {
     }
 
     public String login(LoginRequest loginRequest) throws Exception {
-        HttpRequest req = buildRequest("/session", "POST", loginRequest);
+        HttpRequest req = buildRequest("/session", "POST", loginRequest, null);
         HttpResponse<String> response = sendRequest(req);
         if (response != null && wasSuccessful(response.statusCode())){
             return response.body();
@@ -44,8 +44,12 @@ public class ServerFacade {
 
     }
 
-    public void logout(String authToken){
-
+    public void logout(String authToken) throws Exception {
+        HttpRequest req = buildRequest("/session", "DELETE", null, authToken);
+        HttpResponse<String> response = sendRequest(req);
+        if (response == null || !wasSuccessful(response.statusCode())){
+            throw new Exception("Could not login");
+        }
     }
 
     public Collection<GameData> listGames(String authToken){
@@ -61,7 +65,7 @@ public class ServerFacade {
     }
 
     public void clear(){
-        HttpRequest req = buildRequest("/db", "DELETE", null);
+        HttpRequest req = buildRequest("/db", "DELETE", null, null);
         sendRequest(req);
     }
 
@@ -69,11 +73,14 @@ public class ServerFacade {
 
     }
 
-    private HttpRequest buildRequest(String path, String method, Object body){
-        return HttpRequest.newBuilder()
+    private HttpRequest buildRequest(String path, String method, Object body, String authToken){
+        var request = HttpRequest.newBuilder()
                 .uri(URI.create(serverUrl + path))
-                .method(method, HttpRequest.BodyPublishers.ofString(gson.toJson(body)))
-                .build();
+                .method(method, HttpRequest.BodyPublishers.ofString(gson.toJson(body)));
+        if (authToken != null){
+            request.setHeader("authorization", authToken);
+        }
+        return request.build();
     }
 
     private HttpResponse<String> sendRequest(HttpRequest request){
