@@ -8,7 +8,7 @@ import model.AuthData;
 import model.GameData;
 import model.JoinRequest;
 import model.UserData;
-import request.LoginRequest;
+import model.request.LoginRequest;
 import service.DataService;
 import service.GameService;
 import service.UserService;
@@ -16,7 +16,6 @@ import service.UserService;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 
 public class Server {

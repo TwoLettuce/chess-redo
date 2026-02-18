@@ -6,7 +6,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import request.LoginRequest;
+import model.request.LoginRequest;
 
 public class UserServiceTests {
     private final MemoryDataAccess dataAccess = new MemoryDataAccess();
