@@ -69,11 +69,15 @@ public class ChessClient {
 
     private void register(String[] args) {
         UserData userData = new UserData(args[1], args[2], args[3]);
-        authToken = serverFacade.register(userData);
-        System.out.printf("Now logged in as %s!%n", userData.username());
-        if (authToken != null){
-            loggedInStatus = String.format("[%s] >> ", userData.username());
-            replLoggedIn();
+        try {
+            authToken = serverFacade.register(userData);
+            System.out.printf("Now logged in as %s!%n", userData.username());
+            if (authToken != null) {
+                loggedInStatus = String.format("[%s] >> ", userData.username());
+                replLoggedIn();
+            }
+        } catch (Exception ex){
+            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + ex.getMessage());
         }
     }
 
@@ -127,7 +131,12 @@ public class ChessClient {
 
     private void login(String[] args) {
         LoginRequest loginRequest = new LoginRequest(args[1], args[2]);
-        System.out.println("login");
+        try {
+            serverFacade.login(loginRequest);
+            System.out.printf("Logged in as %s!%n", loginRequest.username());
+        } catch (Exception ex){
+            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + ex.getMessage());
+        }
 
     }
 

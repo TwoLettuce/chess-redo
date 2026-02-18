@@ -25,34 +25,23 @@ public class ServerFacade {
         serverUrl = url;
     }
 
-    public String register(UserData userData){
+    public String register(UserData userData) throws Exception {
         HttpRequest req = buildRequest("/user", "POST", userData);
         HttpResponse<String> response = sendRequest(req);
-        if (response != null){
+        if (response != null && wasSuccessful(response.statusCode())){
             return gson.fromJson(response.body(), Map.class).get("authToken").toString();
         }
-        return null;
+        throw new Exception("Could not register");
     }
 
-
-    private HttpRequest buildRequest(String path, String method, Object body){
-        return HttpRequest.newBuilder()
-                .uri(URI.create(serverUrl + path))
-                .method(method, HttpRequest.BodyPublishers.ofString(gson.toJson(body)))
-                .build();
-    }
-
-    private HttpResponse<String> sendRequest(HttpRequest request){
-        try {
-            return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        } catch (InterruptedException | IOException e) {
-            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Error: could not register user\n" + e.getMessage());
-            return null;
+    public String login(LoginRequest loginRequest) throws Exception {
+        HttpRequest req = buildRequest("/session", "POST", loginRequest);
+        HttpResponse<String> response = sendRequest(req);
+        if (response != null && wasSuccessful(response.statusCode())){
+            return response.body();
         }
-    }
+        throw new Exception("Could not login");
 
-    public String login(LoginRequest loginRequest){
-        return "";
     }
 
     public void logout(String authToken){
@@ -78,5 +67,24 @@ public class ServerFacade {
 
     public void makeMove(String authToken, GameData movedGame){
 
+    }
+
+    private HttpRequest buildRequest(String path, String method, Object body){
+        return HttpRequest.newBuilder()
+                .uri(URI.create(serverUrl + path))
+                .method(method, HttpRequest.BodyPublishers.ofString(gson.toJson(body)))
+                .build();
+    }
+
+    private HttpResponse<String> sendRequest(HttpRequest request){
+        try {
+            return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (InterruptedException | IOException e) {
+            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Error: could not register user\n" + e.getMessage());
+            return null;
+        }
+    }
+    private boolean wasSuccessful(int statusCode){
+        return statusCode/100==2;
     }
 }
