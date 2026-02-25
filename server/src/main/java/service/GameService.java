@@ -2,7 +2,7 @@ package service;
 
 import dataaccess.*;
 import model.GameData;
-import model.JoinRequest;
+import model.request.JoinRequest;
 
 import java.util.Collection;
 import java.util.Objects;

@@ -5,8 +5,9 @@ import dataaccess.*;
 import io.javalin.*;
 import io.javalin.http.Context;
 import model.AuthData;
+import model.CreateGameResult;
 import model.GameData;
-import model.JoinRequest;
+import model.request.JoinRequest;
 import model.UserData;
 import model.request.LoginRequest;
 import service.DataService;
@@ -137,8 +138,8 @@ public class Server {
             return;
         }
         try {
-            int gameID = gameService.createGame(authToken, gameName);
-            ctx.result(gson.toJson(Map.of("gameID", gameID)));
+            CreateGameResult result = new CreateGameResult(gameService.createGame(authToken, gameName));
+            ctx.result(gson.toJson(result));
         } catch (NotLoggedInException ex) {
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));

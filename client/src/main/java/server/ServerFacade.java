@@ -1,8 +1,10 @@
 package server;
 
 import com.google.gson.Gson;
+import model.AuthData;
+import model.CreateGameResult;
 import model.GameData;
-import model.JoinRequest;
+import model.request.JoinRequest;
 import model.UserData;
 import model.request.LoginRequest;
 import ui.EscapeSequences;
@@ -38,7 +40,7 @@ public class ServerFacade {
     public String login(LoginRequest loginRequest) throws Exception {
         HttpRequest req = buildRequest("/session", "POST", loginRequest, null);
         HttpResponse<String> response = sendRequest(req);
-        return handleResponse(response, String.class);
+        return handleResponse(response, AuthData.class).authToken();
     }
 
     public void logout(String authToken) throws Exception {
@@ -52,9 +54,9 @@ public class ServerFacade {
     }
 
     public int createGame(String authToken, String gameName) throws Exception {
-        HttpRequest req = buildRequest("/game", "POST", gameName, authToken);
+        HttpRequest req = buildRequest("/game", "POST", Map.of("gameName", gameName), authToken);
         HttpResponse<String> response = sendRequest(req);
-        return handleResponse(response, int.class);
+        return handleResponse(response, CreateGameResult.class).gameID();
     }
 
     public void joinGame(String authToken, JoinRequest joinRequest){
@@ -91,7 +93,11 @@ public class ServerFacade {
 
     private <T> T handleResponse(HttpResponse<String> response, Class<T> responseClass) throws Exception {
         if (wasSuccessful(response.statusCode())){
-            return gson.fromJson(response.body(), responseClass);
+            if (responseClass == null){
+                return null;
+            } else {
+                return gson.fromJson(response.body(), responseClass);
+            }
         } else {
             System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + gson.fromJson(response.body(), HashMap.class));
             throw new Exception("Could not logout");

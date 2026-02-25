@@ -3,7 +3,7 @@ package service;
 import chess.ChessGame;
 import dataaccess.*;
 import model.GameData;
-import model.JoinRequest;
+import model.request.JoinRequest;
 import model.UserData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
