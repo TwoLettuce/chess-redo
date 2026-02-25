@@ -5,11 +5,12 @@ import dataaccess.*;
 import io.javalin.*;
 import io.javalin.http.Context;
 import model.AuthData;
-import model.CreateGameResult;
+import model.result.CreateGameResult;
 import model.GameData;
 import model.request.JoinRequest;
 import model.UserData;
 import model.request.LoginRequest;
+import model.result.ListGamesResult;
 import service.DataService;
 import service.GameService;
 import service.UserService;
@@ -118,8 +119,8 @@ public class Server {
     private void list(Context ctx){
         String authToken = ctx.header("authorization");
         try {
-            Collection<GameData> games = gameService.listGames(authToken);
-            ctx.result(gson.toJson(Map.of("games", games)));
+            ListGamesResult listGamesResult = new ListGamesResult(gameService.listGames(authToken));
+            ctx.result(gson.toJson(listGamesResult));
         } catch (NotLoggedInException ex) {
             ctx.status(ex.httpCode);
             ctx.json(gson.toJson(Map.of("message", ex.getMessage())));

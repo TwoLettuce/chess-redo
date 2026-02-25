@@ -2,11 +2,12 @@ package server;
 
 import com.google.gson.Gson;
 import model.AuthData;
-import model.CreateGameResult;
+import model.result.CreateGameResult;
 import model.GameData;
 import model.request.JoinRequest;
 import model.UserData;
 import model.request.LoginRequest;
+import model.result.ListGamesResult;
 import ui.EscapeSequences;
 
 import java.io.IOException;
@@ -49,8 +50,10 @@ public class ServerFacade {
         handleResponse(response, null);
     }
 
-    public Collection<GameData> listGames(String authToken){
-        return null;
+    public Collection<GameData> listGames(String authToken) throws Exception {
+        HttpRequest req = buildRequest("/game", "GET", null, authToken);
+        HttpResponse<String> response = sendRequest(req);
+        return handleResponse(response, ListGamesResult.class).games();
     }
 
     public int createGame(String authToken, String gameName) throws Exception {

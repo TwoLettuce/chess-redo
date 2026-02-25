@@ -127,12 +127,16 @@ public class ChessClient {
     }
 
     private void list() {
-        games = (ArrayList<GameData>) serverFacade.listGames(authToken);
-        for (GameData game : games){
-            System.out.printf(EscapeSequences.SET_TEXT_COLOR_MAGENTA + "Game No. %d%n", game.gameID());
-            System.out.printf(EscapeSequences.SET_TEXT_COLOR_BLUE + "%s%n", game.gameName());
-            System.out.printf(EscapeSequences.SET_TEXT_COLOR_WHITE + "White: %s%n", game.whiteUsername());
-            System.out.printf("\u001b[38;5;94m" + "Black: %s%n", game.blackUsername());
+        try {
+            games = (ArrayList<GameData>) serverFacade.listGames(authToken);
+            for (GameData game : games){
+                System.out.printf(EscapeSequences.SET_TEXT_COLOR_MAGENTA + "Game No. %d%n", game.gameID());
+                System.out.printf(EscapeSequences.SET_TEXT_COLOR_BLUE + "%s%n", game.gameName());
+                System.out.printf(EscapeSequences.SET_TEXT_COLOR_WHITE + "White: %s%n", game.whiteUsername());
+                System.out.printf("\u001b[38;5;94m" + "Black: %s%n", game.blackUsername());
+            }
+        } catch (Exception ex){
+            System.out.println(ex.getMessage());
         }
     }
 

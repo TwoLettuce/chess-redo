@@ -107,6 +107,11 @@ public class ServerFacadeTests {
         , facade.listGames(auth));
     }
 
+    @Test
+    public void listGamesWithoutAuth() throws Exception {
+        Assertions.assertThrows(Exception.class, () -> facade.listGames("ur mom"));
+    }
+
 
 
 }
