@@ -62,8 +62,10 @@ public class ServerFacade {
         return handleResponse(response, CreateGameResult.class).gameID();
     }
 
-    public void joinGame(String authToken, JoinRequest joinRequest){
-
+    public void joinGame(String authToken, JoinRequest joinRequest) throws Exception {
+        HttpRequest req = buildRequest("/game", "PUT", joinRequest, authToken);
+        HttpResponse<String> response = sendRequest(req);
+        handleResponse(response, null);
     }
 
     public void clear() throws Exception {
@@ -71,7 +73,7 @@ public class ServerFacade {
         sendRequest(req);
     }
 
-    public void makeMove(String authToken, GameData movedGame){
+    public void makeMove(String authToken, GameData updatedGame){
 
     }
 

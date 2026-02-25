@@ -6,7 +6,6 @@ import io.javalin.*;
 import io.javalin.http.Context;
 import model.AuthData;
 import model.result.CreateGameResult;
-import model.GameData;
 import model.request.JoinRequest;
 import model.UserData;
 import model.request.LoginRequest;
@@ -15,7 +14,6 @@ import service.DataService;
 import service.GameService;
 import service.UserService;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 

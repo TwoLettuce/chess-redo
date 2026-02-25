@@ -3,6 +3,7 @@ package client;
 import chess.ChessGame;
 import model.GameData;
 import model.UserData;
+import model.request.JoinRequest;
 import model.request.LoginRequest;
 import org.junit.jupiter.api.*;
 import server.Server;
@@ -112,6 +113,28 @@ public class ServerFacadeTests {
         Assertions.assertThrows(Exception.class, () -> facade.listGames("ur mom"));
     }
 
+    @Test
+    public void joinGame() throws Exception {
+        int id = facade.createGame(auth, "testGame");
+        JoinRequest joinRequestWhite = new JoinRequest("WHITE", id);
+        JoinRequest joinRequestBlack = new JoinRequest("BLACK", id);
+        Assertions.assertDoesNotThrow(() -> facade.joinGame(auth, joinRequestWhite));
+        Assertions.assertDoesNotThrow(() -> facade.joinGame(auth, joinRequestBlack));
+        Assertions.assertThrows(Exception.class, () -> facade.joinGame(auth, joinRequestWhite));
+        Assertions.assertThrows(Exception.class, () -> facade.joinGame(auth, joinRequestBlack));
+    }
+
+    @Test
+    public void joinGameBadRequests () throws Exception {
+        int id = facade.createGame(auth, "testGame");
+        JoinRequest invalidColor = new JoinRequest("GREEN", id);
+        JoinRequest invalidGame = new JoinRequest("WHITE", id+1);
+        JoinRequest validRequest = new JoinRequest("WHITE", id);
+
+        Assertions.assertThrows(Exception.class, () -> facade.joinGame(auth, invalidColor));
+        Assertions.assertThrows(Exception.class, () -> facade.joinGame(auth, invalidGame));
+        Assertions.assertThrows(Exception.class, () -> facade.joinGame("auth", validRequest));
+    }
 
 
 }
