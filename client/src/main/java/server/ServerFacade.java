@@ -14,6 +14,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 public class ServerFacade {
@@ -37,34 +38,30 @@ public class ServerFacade {
     public String login(LoginRequest loginRequest) throws Exception {
         HttpRequest req = buildRequest("/session", "POST", loginRequest, null);
         HttpResponse<String> response = sendRequest(req);
-        if (response != null && wasSuccessful(response.statusCode())){
-            return response.body();
-        }
-        throw new Exception("Could not login");
-
+        return handleResponse(response, String.class);
     }
 
     public void logout(String authToken) throws Exception {
         HttpRequest req = buildRequest("/session", "DELETE", null, authToken);
         HttpResponse<String> response = sendRequest(req);
-        if (response == null || !wasSuccessful(response.statusCode())){
-            throw new Exception("Could not login");
-        }
+        handleResponse(response, null);
     }
 
     public Collection<GameData> listGames(String authToken){
         return null;
     }
 
-    public int createGame(String authToken, String gameName){
-        return -0;
+    public int createGame(String authToken, String gameName) throws Exception {
+        HttpRequest req = buildRequest("/game", "POST", gameName, authToken);
+        HttpResponse<String> response = sendRequest(req);
+        return handleResponse(response, int.class);
     }
 
     public void joinGame(String authToken, JoinRequest joinRequest){
 
     }
 
-    public void clear(){
+    public void clear() throws Exception {
         HttpRequest req = buildRequest("/db", "DELETE", null, null);
         sendRequest(req);
     }
@@ -83,14 +80,24 @@ public class ServerFacade {
         return request.build();
     }
 
-    private HttpResponse<String> sendRequest(HttpRequest request){
+    private HttpResponse<String> sendRequest(HttpRequest request) throws Exception {
         try {
             return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (InterruptedException | IOException e) {
             System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Error: could not register user\n" + e.getMessage());
-            return null;
+            throw new Exception("bruh");
         }
     }
+
+    private <T> T handleResponse(HttpResponse<String> response, Class<T> responseClass) throws Exception {
+        if (wasSuccessful(response.statusCode())){
+            return gson.fromJson(response.body(), responseClass);
+        } else {
+            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + gson.fromJson(response.body(), HashMap.class));
+            throw new Exception("Could not logout");
+        }
+    }
+
     private boolean wasSuccessful(int statusCode){
         return statusCode/100==2;
     }

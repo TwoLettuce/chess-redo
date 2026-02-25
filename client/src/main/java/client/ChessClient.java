@@ -58,7 +58,11 @@ public class ChessClient {
                     register(args);
                     break;
                 case "clear":
-                    serverFacade.clear();
+                    try {
+                        serverFacade.clear();
+                    } catch (Exception ex){
+                        System.out.println("clear unsuccessful");
+                    }
                     break;
                 default:
             }
@@ -108,8 +112,12 @@ public class ChessClient {
                         System.out.println("Logout unsuccessful");
                     }
                 case "create", "c":
+                    try {
                     int gameID = serverFacade.createGame(authToken, args[1]);
                     System.out.printf("%s created with Game No. %d%n", args[1], gameID);
+                    } catch (Exception ex){
+                        System.out.println("create game unsuccessful");
+                    }
                     break;
                 case "list", "l":
                     list();
