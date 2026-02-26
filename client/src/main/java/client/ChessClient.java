@@ -1,5 +1,6 @@
 package client;
 
+import exception.DataAccessException;
 import model.GameData;
 import model.UserData;
 import model.request.LoginRequest;
@@ -9,6 +10,7 @@ import ui.EscapeSequences;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class ChessClient {
@@ -146,10 +148,38 @@ public class ChessClient {
         try {
             serverFacade.login(loginRequest);
             System.out.printf("Logged in as %s!%n", loginRequest.username());
-        } catch (Exception ex){
-            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + ex.getMessage());
+        } catch (DataAccessException ex){
+            printErrorToUser(ex, "login");
+
         }
 
+    }
+
+    private void printErrorToUser(DataAccessException ex, String command) {
+        String errorMessage = ex.getMessage();
+        switch (ex.httpCode){
+            case 400:
+                errorMessage = "Invalid usage for command: " + command + ". try 'help'";
+                break;
+            case 401:
+                if (Objects.equals(command, "login")){
+                    errorMessage = "Invalid username or password.";
+                } else {
+                    errorMessage = "Please log in first!";
+                }
+                break;
+            case 403:
+                if (Objects.equals(command, "register")){
+                    errorMessage = "Username already taken.";
+                } else if (Objects.equals(command, "")) {
+                    errorMessage = "Color already taken.";
+                }
+                break;
+            case 500:
+                errorMessage = "Internal server error. Whoops!";
+                break;
+        }
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + errorMessage);
     }
 
     private void displayHelpMessage() {
@@ -188,18 +218,7 @@ public class ChessClient {
         String[] args = input.split(" ");
         if (!validBasicCommands.contains(args[0])){
             throw new InvalidCommandException("Error: invalid command. Type 'help' for more info");
-        } else if (!validateArgs(args)) {
-            throw new InvalidCommandException("Invalid usage for command: " + args[0]);
         }
         return args;
-    }
-
-    private boolean validateArgs(String[] args) {
-        return switch (args[0]) {
-            case "h", "help", "q", "quit" -> args.length == 1;
-            case "l", "login" -> args.length == 3;
-            case "r", "register" -> args.length == 4;
-            default -> false;
-        };
     }
 }

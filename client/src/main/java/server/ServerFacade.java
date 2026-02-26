@@ -1,6 +1,7 @@
 package server;
 
 import com.google.gson.Gson;
+import exception.DataAccessException;
 import model.AuthData;
 import model.result.CreateGameResult;
 import model.GameData;
@@ -8,7 +9,6 @@ import model.request.JoinRequest;
 import model.UserData;
 import model.request.LoginRequest;
 import model.result.ListGamesResult;
-import ui.EscapeSequences;
 
 import java.io.IOException;
 import java.net.URI;
@@ -17,8 +17,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class ServerFacade {
     private final HttpClient httpClient = HttpClient.newHttpClient();
@@ -29,53 +29,50 @@ public class ServerFacade {
         serverUrl = url;
     }
 
-    public String register(UserData userData) throws Exception {
+    public String register(UserData userData) throws DataAccessException {
         HttpRequest req = buildRequest("/user", "POST", userData, null);
         HttpResponse<String> response = sendRequest(req);
-        if (response != null && wasSuccessful(response.statusCode())){
-            return gson.fromJson(response.body(), Map.class).get("authToken").toString();
-        }
-        throw new Exception("Could not register");
+        return Objects.requireNonNull(handleResponse(response, AuthData.class)).authToken();
     }
 
-    public String login(LoginRequest loginRequest) throws Exception {
+    public String login(LoginRequest loginRequest) throws DataAccessException {
         HttpRequest req = buildRequest("/session", "POST", loginRequest, null);
         HttpResponse<String> response = sendRequest(req);
-        return handleResponse(response, AuthData.class).authToken();
+        return Objects.requireNonNull(handleResponse(response, AuthData.class)).authToken();
     }
 
-    public void logout(String authToken) throws Exception {
+    public void logout(String authToken) throws DataAccessException {
         HttpRequest req = buildRequest("/session", "DELETE", null, authToken);
         HttpResponse<String> response = sendRequest(req);
         handleResponse(response, null);
     }
 
-    public Collection<GameData> listGames(String authToken) throws Exception {
+    public Collection<GameData> listGames(String authToken) throws DataAccessException {
         HttpRequest req = buildRequest("/game", "GET", null, authToken);
         HttpResponse<String> response = sendRequest(req);
-        return handleResponse(response, ListGamesResult.class).games();
+        return Objects.requireNonNull(handleResponse(response, ListGamesResult.class)).games();
     }
 
-    public int createGame(String authToken, String gameName) throws Exception {
+    public int createGame(String authToken, String gameName) throws DataAccessException {
         HttpRequest req = buildRequest("/game", "POST", Map.of("gameName", gameName), authToken);
         HttpResponse<String> response = sendRequest(req);
-        return handleResponse(response, CreateGameResult.class).gameID();
+        return Objects.requireNonNull(handleResponse(response, CreateGameResult.class)).gameID();
     }
 
-    public void joinGame(String authToken, JoinRequest joinRequest) throws Exception {
+    public void joinGame(String authToken, JoinRequest joinRequest) throws DataAccessException {
         HttpRequest req = buildRequest("/game", "PUT", joinRequest, authToken);
         HttpResponse<String> response = sendRequest(req);
         handleResponse(response, null);
     }
 
-    public void clear() throws Exception {
+    public void clear() throws DataAccessException {
         HttpRequest req = buildRequest("/db", "DELETE", null, null);
         sendRequest(req);
     }
 
-    public void makeMove(String authToken, GameData updatedGame){
-
-    }
+//    public void makeMove(String authToken, GameData updatedGame){
+//
+//    }
 
     private HttpRequest buildRequest(String path, String method, Object body, String authToken){
         var request = HttpRequest.newBuilder()
@@ -87,16 +84,15 @@ public class ServerFacade {
         return request.build();
     }
 
-    private HttpResponse<String> sendRequest(HttpRequest request) throws Exception {
+    private HttpResponse<String> sendRequest(HttpRequest request) throws DataAccessException {
         try {
             return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (InterruptedException | IOException e) {
-            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Error: could not register user\n" + e.getMessage());
-            throw new Exception("bruh");
+            throw new DataAccessException(500, "Could not send request");
         }
     }
 
-    private <T> T handleResponse(HttpResponse<String> response, Class<T> responseClass) throws Exception {
+    private <T> T handleResponse(HttpResponse<String> response, Class<T> responseClass) throws DataAccessException {
         if (wasSuccessful(response.statusCode())){
             if (responseClass == null){
                 return null;
@@ -104,8 +100,9 @@ public class ServerFacade {
                 return gson.fromJson(response.body(), responseClass);
             }
         } else {
-            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + gson.fromJson(response.body(), HashMap.class));
-            throw new Exception("Could not logout");
+            DataAccessException ex = gson.fromJson(response.body(), DataAccessException.class);
+            ex.httpCode = response.statusCode();
+            throw ex;
         }
     }
 

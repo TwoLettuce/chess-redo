@@ -118,8 +118,10 @@ public class ServerFacadeTests {
         int id = facade.createGame(auth, "testGame");
         JoinRequest joinRequestWhite = new JoinRequest("WHITE", id);
         JoinRequest joinRequestBlack = new JoinRequest("BLACK", id);
+
         Assertions.assertDoesNotThrow(() -> facade.joinGame(auth, joinRequestWhite));
         Assertions.assertDoesNotThrow(() -> facade.joinGame(auth, joinRequestBlack));
+
         Assertions.assertThrows(Exception.class, () -> facade.joinGame(auth, joinRequestWhite));
         Assertions.assertThrows(Exception.class, () -> facade.joinGame(auth, joinRequestBlack));
     }

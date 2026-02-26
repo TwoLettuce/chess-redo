@@ -2,7 +2,7 @@ package dataaccess;
 
 import chess.ChessGame;
 import com.google.gson.Gson;
-import io.javalin.http.InternalServerErrorResponse;
+import exception.DataAccessException;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
@@ -11,7 +11,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public class SQLDataAccess implements DataAccess {
     Gson gson = new Gson();
