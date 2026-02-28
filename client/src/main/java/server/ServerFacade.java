@@ -100,7 +100,7 @@ public class ServerFacade {
                 return gson.fromJson(response.body(), responseClass);
             }
         } else {
-            DataAccessException ex = gson.fromJson(response.body(), DataAccessException.class);
+            DataAccessException ex = new DataAccessException((String) gson.fromJson(response.body(), Map.class).get("message"));
             ex.httpCode = response.statusCode();
             throw ex;
         }

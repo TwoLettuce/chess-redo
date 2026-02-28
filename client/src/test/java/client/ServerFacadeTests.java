@@ -1,6 +1,7 @@
 package client;
 
 import chess.ChessGame;
+import exception.DataAccessException;
 import model.GameData;
 import model.UserData;
 import model.request.JoinRequest;
@@ -33,7 +34,8 @@ public class ServerFacadeTests {
     }
 
     @AfterAll
-    static void stopServer() {
+    static void stopServer() throws DataAccessException {
+        facade.clear();
         server.stop();
     }
 

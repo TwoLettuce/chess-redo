@@ -3,28 +3,32 @@ package client;
 import exception.DataAccessException;
 import model.GameData;
 import model.UserData;
+import model.request.JoinRequest;
 import model.request.LoginRequest;
 import server.ServerFacade;
 import ui.ChessBoardDrawer;
 import ui.EscapeSequences;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
+import static ui.HelpfulStrings.*;
+
 public class ChessClient {
     private final ChessBoardDrawer drawer = new ChessBoardDrawer();
-    private final String notLoggedInStatus = "Not Logged in >> ";
     private String loggedInStatus;
-    private final ArrayList<String> validBasicCommands = new ArrayList<>(List.of("h", "help", "q", "quit", "l", "login", "r", "register"));
+
+    private String helpMessage = helpMessageLoggedOut;
     private final ServerFacade serverFacade;
     private String authToken = "";
     private ArrayList<GameData> games = new ArrayList<>();
+    private String status;
 
 
     public ChessClient(String serverUrl) {
         serverFacade = new ServerFacade(serverUrl);
+        status = notLoggedInStatus;
     }
 
     public void run(){
@@ -35,23 +39,24 @@ public class ChessClient {
         quit:
         while(true){
             System.out.print(EscapeSequences.SET_TEXT_COLOR_GREEN);
-            System.out.print(notLoggedInStatus);
-            String[] args;
+            System.out.print(status);
             Scanner scanner = new Scanner(System.in);
             String input = scanner.nextLine();
+            String[] args = input.split(" ");
             try {
                 args = parse(input);
             } catch (InvalidCommandException ex){
-                System.out.print(EscapeSequences.SET_TEXT_COLOR_RED);
-                System.out.println(ex.getMessage());
+
                 continue;
             }
             switch (args[0]){
                 case "q","quit":
-                    System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW+ "C-ya!");
+                    if(authToken != null){
+                        logout();
+                    }
                     break quit;
                 case "h","help":
-                    displayHelpMessage();
+                    help();
                     break;
                 case "l","login":
                     login(args);
@@ -60,71 +65,99 @@ public class ChessClient {
                     register(args);
                     break;
                 case "clear":
+                    clear();
+                    break;
+                case "logout":
+                    logout();
+                    break;
+                case "create", "c":
                     try {
-                        serverFacade.clear();
-                    } catch (Exception ex){
-                        System.out.println("clear unsuccessful");
+                        int gameID = serverFacade.createGame(authToken, args[1]);
+                        System.out.printf("%s created with Game No. %d%n", args[1], gameID);
+                    } catch (DataAccessException ex){
+                        printErrorToUser(ex, "create");
+                    }
+                    break;
+                case "list":
+                    list();
+                    break;
+                case "join", "j":
+                    JoinRequest joinRequest = new JoinRequest(args[2].toUpperCase(), Integer.parseInt(args[1]));
+                    try {
+                        serverFacade.joinGame(authToken, joinRequest);
+                    } catch (DataAccessException ex){
+                        printErrorToUser(ex, "join");
                     }
                     break;
                 default:
+                    System.out.print(EscapeSequences.SET_TEXT_COLOR_RED);
+                    System.out.println("Error: " + args[0] + " is an invalid command. Type 'help' for more info");
             }
         }
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW+ "C-ya!");
+        System.exit(0);
+    }
 
+    private void help() {
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + helpMessage);
+    }
 
+    private void clear() {
+        try {
+            serverFacade.clear();
+        } catch (Exception ex) {
+            System.out.println("clear unsuccessful");
+        }
     }
 
     private void register(String[] args) {
-        UserData userData = new UserData(args[1], args[2], args[3]);
+        UserData userData;
+        try {
+            userData = new UserData(args[1], args[2], args[3]);
+        } catch (ArrayIndexOutOfBoundsException ex){
+            userData = new UserData(null, null, null);
+        }
+
         try {
             authToken = serverFacade.register(userData);
             System.out.printf("Now logged in as %s!%n", userData.username());
             if (authToken != null) {
                 loggedInStatus = String.format("[%s] >> ", userData.username());
-                replLoggedIn();
+                status = loggedInStatus;
+                helpMessage = helpMessageLoggedIn;
             }
-        } catch (Exception ex){
-            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + ex.getMessage());
+        } catch (DataAccessException ex){
+            printErrorToUser(ex, "register");
         }
     }
 
-    private void replLoggedIn() {
-        logout:
-        while(true) {
-            System.out.print(EscapeSequences.SET_TEXT_COLOR_GREEN);
-            System.out.print(loggedInStatus);
-            String[] args;
-            Scanner scanner = new Scanner(System.in);
-            String input = scanner.nextLine();
-            try {
-                args = parse(input);
-            } catch (InvalidCommandException ex){
-                System.out.print(EscapeSequences.SET_TEXT_COLOR_RED);
-                System.out.println(ex.getMessage());
-                continue;
-            }
-            switch (input){
-                case "help", "h":
-                    displayLoggedInHelpMessage();
-                    break;
-                case "logout":
-                    try {
-                        serverFacade.logout(authToken);
-                        break logout;
-                    } catch (Exception ex){
-                        System.out.println("Logout unsuccessful");
-                    }
-                case "create", "c":
-                    try {
-                    int gameID = serverFacade.createGame(authToken, args[1]);
-                    System.out.printf("%s created with Game No. %d%n", args[1], gameID);
-                    } catch (Exception ex){
-                        System.out.println("create game unsuccessful");
-                    }
-                    break;
-                case "list", "l":
-                    list();
+    private void login(String[] args) {
+        LoginRequest loginRequest;
+        try {
+            loginRequest = new LoginRequest(args[1], args[2]);
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            loginRequest = new LoginRequest(null, null);
+        }
 
+        try {
+            authToken = serverFacade.login(loginRequest);
+            if (authToken != null) {
+                System.out.printf("Logged in as %s!%n", loginRequest.username());
+                loggedInStatus = String.format("[%s] >> ", loginRequest.username());
+                status = loggedInStatus;
+                helpMessage = helpMessageLoggedIn;
             }
+        } catch (DataAccessException ex){
+            printErrorToUser(ex, "login");
+        }
+    }
+
+    private void logout() {
+        try {
+            serverFacade.logout(authToken);
+            authToken = null;
+        } catch (DataAccessException ex) {
+            printErrorToUser(ex, "quit");
         }
     }
 
@@ -137,22 +170,9 @@ public class ChessClient {
                 System.out.printf(EscapeSequences.SET_TEXT_COLOR_WHITE + "White: %s%n", game.whiteUsername());
                 System.out.printf("\u001b[38;5;94m" + "Black: %s%n", game.blackUsername());
             }
-        } catch (Exception ex){
-            System.out.println(ex.getMessage());
-        }
-    }
-
-
-    private void login(String[] args) {
-        LoginRequest loginRequest = new LoginRequest(args[1], args[2]);
-        try {
-            serverFacade.login(loginRequest);
-            System.out.printf("Logged in as %s!%n", loginRequest.username());
         } catch (DataAccessException ex){
-            printErrorToUser(ex, "login");
-
+            printErrorToUser(ex, "list");
         }
-
     }
 
     private void printErrorToUser(DataAccessException ex, String command) {
@@ -182,43 +202,21 @@ public class ChessClient {
         System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + errorMessage);
     }
 
-    private void displayHelpMessage() {
-        String help = "Commands and Usages:\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "help - display the help menu\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> help\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "register - register a new user.\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> register <username> <password> <email>\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "login - login as an existing user.\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> login <username> <password>\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "quit - exit the chess client\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> quit";
-        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + help);
-    }
-
-    private void displayLoggedInHelpMessage() {
-        String help = "Commands and Usages:\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "help - display the help menu\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> help\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "logout - logout\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> logout\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "create - create a new game and give it a name.\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> create <name>\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "list - get a list of all games.\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> list\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "join - join a game and start playing!\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> join <Game No.> <WHITE/BLACK>\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "observe - observe a game as it unfolds.\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> observe <Game No.>\n" + EscapeSequences.SET_TEXT_UNDERLINE +
-                "quit - exit the chess client\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
-                ">> quit";
-        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + help);
-    }
-
     private String[] parse(String input) {
         String[] args = input.split(" ");
         if (!validBasicCommands.contains(args[0])){
-            throw new InvalidCommandException("Error: invalid command. Type 'help' for more info");
+            throw new InvalidCommandException("Error: " + args[0] + " is an invalid command. Type 'help' for more info");
         }
         return args;
+    }
+
+    private boolean checkMaxArgs(String cmd, String[] args) {
+        return switch (cmd){
+            case "register" -> args.length <= 3;
+            case "login", "join" -> args.length <= 2;
+            case "create" -> args.length <= 1;
+            case "clear", "quit", "list" -> args.length == 0;
+            default -> true;
+        };
     }
 }
