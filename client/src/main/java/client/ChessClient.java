@@ -9,11 +9,7 @@ import server.ServerFacade;
 import ui.ChessBoardDrawer;
 import ui.EscapeSequences;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
 
 import static ui.HelpfulStrings.*;
 
@@ -23,8 +19,8 @@ public class ChessClient {
 
     private String helpMessage = helpMessageLoggedOut;
     private final ServerFacade serverFacade;
-    private String authToken = "";
-    private ArrayList<GameData> games = new ArrayList<>();
+    private String authToken = null;
+    private Collection<GameData> games = new ArrayList<>();
     private String status;
 
 
@@ -79,12 +75,7 @@ public class ChessClient {
                     list();
                     break;
                 case "join", "j":
-                    JoinRequest joinRequest = new JoinRequest(args[2].toUpperCase(), Integer.parseInt(args[1]));
-                    try {
-                        serverFacade.joinGame(authToken, joinRequest);
-                    } catch (DataAccessException ex){
-                        printErrorToUser(ex, "join");
-                    }
+                    join(args);
                     break;
                 default:
                     System.out.print(EscapeSequences.SET_TEXT_COLOR_RED);
@@ -94,6 +85,8 @@ public class ChessClient {
         System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW+ "C-ya!");
         System.exit(0);
     }
+
+
 
     private void help() {
         System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + helpMessage);
@@ -117,7 +110,7 @@ public class ChessClient {
 
         try {
             authToken = serverFacade.register(userData);
-            System.out.printf("Now logged in as %s!%n", userData.username());
+            System.out.printf(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Now logged in as %s!%n", userData.username());
             if (authToken != null) {
                 loggedInStatus = String.format("[%s] >> ", userData.username());
                 status = loggedInStatus;
@@ -139,7 +132,7 @@ public class ChessClient {
         try {
             authToken = serverFacade.login(loginRequest);
             if (authToken != null) {
-                System.out.printf("Logged in as %s!%n", loginRequest.username());
+                System.out.printf(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Logged in as %s!%n", loginRequest.username());
                 loggedInStatus = String.format("[%s] >> ", loginRequest.username());
                 status = loggedInStatus;
                 helpMessage = helpMessageLoggedIn;
@@ -152,7 +145,10 @@ public class ChessClient {
     private void logout() {
         try {
             serverFacade.logout(authToken);
+            helpMessage = helpMessageLoggedOut;
+            status = notLoggedInStatus;
             authToken = null;
+            System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Logout Successful!");
         } catch (DataAccessException ex) {
             printErrorToUser(ex, "logout");
         }
@@ -160,18 +156,22 @@ public class ChessClient {
 
     private void list() {
         try {
-            games = (ArrayList<GameData>) serverFacade.listGames(authToken);
-            for (GameData game : games){
-                System.out.printf(EscapeSequences.SET_TEXT_COLOR_MAGENTA + "Game No. %d%n", game.gameID());
-                System.out.printf(EscapeSequences.SET_TEXT_COLOR_BLUE + "%s%n", game.gameName());
-                System.out.printf(EscapeSequences.SET_TEXT_COLOR_WHITE + "White: %s%n", game.whiteUsername());
-                System.out.printf("\u001b[38;5;94m" + "Black: %s%n", game.blackUsername());
-            }
+            games = serverFacade.listGames(authToken);
+            drawer.listGames(games);
             if (games.isEmpty()){
                 System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "No games yet! use 'create <name>' to create one!");
             }
         } catch (DataAccessException ex){
             printErrorToUser(ex, "list");
+        }
+    }
+    
+    private void join(String[] args) {
+        JoinRequest joinRequest = new JoinRequest(args[2].toUpperCase(), Integer.parseInt(args[1]));
+        try {
+            serverFacade.joinGame(authToken, joinRequest);
+        } catch (DataAccessException ex){
+            printErrorToUser(ex, "join");
         }
     }
 
@@ -231,8 +231,8 @@ public class ChessClient {
         return switch (cmd){
             case "register" -> args.length <= 3;
             case "login", "join" -> args.length <= 2;
-            case "create" -> args.length <= 1;
-            case "clear", "quit", "list" -> args.length == 0;
+            case "create", "observe" -> args.length <= 1;
+            case "clear", "quit", "list", "help", "logout" -> args.length == 0;
             default -> false;
         };
     }

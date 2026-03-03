@@ -4,6 +4,9 @@ import chess.ChessBoard;
 import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessPosition;
+import model.GameData;
+
+import java.util.Collection;
 
 public class ChessBoardDrawer {
 
@@ -80,5 +83,14 @@ public class ChessBoardDrawer {
         row.append(EscapeSequences.RESET_BG_COLOR).append(EscapeSequences.RESET_TEXT_BOLD_FAINT).append(EscapeSequences.RESET_TEXT_ITALIC);
         row.append("\n");
         return row.toString();
+    }
+
+    public void listGames(Collection<GameData> games){
+        for (GameData game : games){
+            System.out.printf(EscapeSequences.SET_TEXT_COLOR_MAGENTA + "Game No. %d | ", game.gameID());
+            System.out.printf(EscapeSequences.SET_TEXT_COLOR_BLUE + "%s | ", game.gameName());
+            System.out.printf(EscapeSequences.SET_TEXT_COLOR_WHITE + "White: %s | ", game.whiteUsername());
+            System.out.printf("\u001b[38;5;94m" + "Black: %s%n", game.blackUsername());
+        }
     }
 }
