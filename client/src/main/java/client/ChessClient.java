@@ -9,7 +9,9 @@ import server.ServerFacade;
 import ui.ChessBoardDrawer;
 import ui.EscapeSequences;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -32,21 +34,21 @@ public class ChessClient {
     }
 
     public void run(){
-        replNotLoggedIn();
+        repl();
     }
 
-    private void replNotLoggedIn(){
+    private void repl(){
         quit:
         while(true){
             System.out.print(EscapeSequences.SET_TEXT_COLOR_GREEN);
             System.out.print(status);
             Scanner scanner = new Scanner(System.in);
             String input = scanner.nextLine();
-            String[] args = input.split(" ");
+            String[] args;
             try {
                 args = parse(input);
             } catch (InvalidCommandException ex){
-
+                System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + ex.getMessage());
                 continue;
             }
             switch (args[0]){
@@ -71,12 +73,7 @@ public class ChessClient {
                     logout();
                     break;
                 case "create", "c":
-                    try {
-                        int gameID = serverFacade.createGame(authToken, args[1]);
-                        System.out.printf("%s created with Game No. %d%n", args[1], gameID);
-                    } catch (DataAccessException ex){
-                        printErrorToUser(ex, "create");
-                    }
+                    create(args);
                     break;
                 case "list":
                     list();
@@ -157,7 +154,7 @@ public class ChessClient {
             serverFacade.logout(authToken);
             authToken = null;
         } catch (DataAccessException ex) {
-            printErrorToUser(ex, "quit");
+            printErrorToUser(ex, "logout");
         }
     }
 
@@ -170,6 +167,9 @@ public class ChessClient {
                 System.out.printf(EscapeSequences.SET_TEXT_COLOR_WHITE + "White: %s%n", game.whiteUsername());
                 System.out.printf("\u001b[38;5;94m" + "Black: %s%n", game.blackUsername());
             }
+            if (games.isEmpty()){
+                System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "No games yet! use 'create <name>' to create one!");
+            }
         } catch (DataAccessException ex){
             printErrorToUser(ex, "list");
         }
@@ -179,7 +179,7 @@ public class ChessClient {
         String errorMessage = ex.getMessage();
         switch (ex.httpCode){
             case 400:
-                errorMessage = "Invalid usage for command: " + command + ". try 'help'";
+                errorMessage = "Invalid usage for command: '" + command + "'. Type 'help' for more info";
                 break;
             case 401:
                 if (Objects.equals(command, "login")){
@@ -202,10 +202,27 @@ public class ChessClient {
         System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + errorMessage);
     }
 
+    private void create(String[] args){
+        try {
+            String gameName;
+            try {
+                gameName = args[1];
+            }catch (ArrayIndexOutOfBoundsException ex){
+                gameName = null;
+            }
+            int gameID = serverFacade.createGame(authToken, gameName);
+            System.out.printf("%s created with Game No. %d%n", args[1], gameID);
+        } catch (DataAccessException ex){
+            printErrorToUser(ex, "create");
+        }
+    }
+
     private String[] parse(String input) {
         String[] args = input.split(" ");
         if (!validBasicCommands.contains(args[0])){
-            throw new InvalidCommandException("Error: " + args[0] + " is an invalid command. Type 'help' for more info");
+            throw new InvalidCommandException("Error: '" + args[0] + "' is an invalid command. Type 'help' for more info");
+        } else if (!checkMaxArgs(args[0], Arrays.copyOfRange(args, 1, args.length))){
+            throw new InvalidCommandException("Invalid usage for command: '" + args[0] + "'. Type 'help' for more info");
         }
         return args;
     }
@@ -216,7 +233,7 @@ public class ChessClient {
             case "login", "join" -> args.length <= 2;
             case "create" -> args.length <= 1;
             case "clear", "quit", "list" -> args.length == 0;
-            default -> true;
+            default -> false;
         };
     }
 }

@@ -36,9 +36,10 @@ public class HelpfulStrings {
     public static final ArrayList<String> validBasicCommands = new ArrayList<>(List.of(
             "h", "help",
             "q", "quit",
-            "l", "login",
             "r", "register",
+            "l", "login",
             "logout",
+            "list",
             "c", "create",
             "j", "join",
             "o", "observe"

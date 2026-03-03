@@ -6,6 +6,7 @@ import exception.DataAccessException;
 import io.javalin.*;
 import io.javalin.http.Context;
 import model.AuthData;
+import model.request.CreateRequest;
 import model.result.CreateGameResult;
 import model.request.JoinRequest;
 import model.UserData;
@@ -131,7 +132,7 @@ public class Server {
 
     private void create(Context ctx){
         String authToken = ctx.header("authorization");
-        String gameName = (String) gson.fromJson(ctx.body(), HashMap.class).get("gameName");
+        String gameName = gson.fromJson(ctx.body(), CreateRequest.class).gameName();
         if (gameName == null){
             ctx.status(400);
             ctx.result(gson.toJson(Map.of("message", "Error: bad request")));

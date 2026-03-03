@@ -3,6 +3,7 @@ package server;
 import com.google.gson.Gson;
 import exception.DataAccessException;
 import model.AuthData;
+import model.request.CreateRequest;
 import model.result.CreateGameResult;
 import model.GameData;
 import model.request.JoinRequest;
@@ -54,7 +55,7 @@ public class ServerFacade {
     }
 
     public int createGame(String authToken, String gameName) throws DataAccessException {
-        HttpRequest req = buildRequest("/game", "POST", Map.of("gameName", gameName), authToken);
+        HttpRequest req = buildRequest("/game", "POST", new CreateRequest(gameName), authToken);
         HttpResponse<String> response = sendRequest(req);
         return Objects.requireNonNull(handleResponse(response, CreateGameResult.class)).gameID();
     }
