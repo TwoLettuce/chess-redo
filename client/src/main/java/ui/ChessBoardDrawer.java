@@ -6,7 +6,9 @@ import chess.ChessPiece;
 import chess.ChessPosition;
 import model.GameData;
 
-import java.util.Collection;
+import java.lang.reflect.InaccessibleObjectException;
+import java.util.HashMap;
+import java.util.Objects;
 
 public class ChessBoardDrawer {
 
@@ -14,7 +16,15 @@ public class ChessBoardDrawer {
     char[] headerChars = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
     char[] reverseHeader = {'h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'};
 
-    public String drawBoard(ChessBoard board, ChessGame.TeamColor perspectiveOf){
+    public String drawBoard(ChessBoard board, String team){
+        ChessGame.TeamColor perspectiveOf;
+        if (Objects.equals(team, "WHITE")){
+            perspectiveOf = ChessGame.TeamColor.WHITE;
+        } else if (Objects.equals(team, "BLACK")){
+            perspectiveOf = ChessGame.TeamColor.BLACK;
+        } else {
+            throw new InaccessibleObjectException("Not permissible to join as " + team);
+        }
         StringBuilder prettyBoard = new StringBuilder();
         prettyBoard.append(EscapeSequences.SET_TEXT_COLOR_BLACK);
         prettyBoard.append(buildHeader(perspectiveOf));
@@ -35,11 +45,14 @@ public class ChessBoardDrawer {
             headerChars=reverseHeader;
         }
         header.append(emptySpace);
-        for (char col_header : headerChars) {
-            header.append(" ").append(col_header).append(" ");
+        for (char colHeader : headerChars) {
+            header.append(" ").append(colHeader).append(" ");
         }
         header.append(emptySpace);
-        header.append(EscapeSequences.RESET_BG_COLOR).append(EscapeSequences.RESET_TEXT_ITALIC).append(EscapeSequences.RESET_TEXT_BOLD_FAINT).append("\n");
+        header.append(EscapeSequences.RESET_BG_COLOR)
+                .append(EscapeSequences.RESET_TEXT_ITALIC)
+                .append(EscapeSequences.RESET_TEXT_BOLD_FAINT)
+                .append("\n");
         return header.toString();
     }
 
@@ -85,9 +98,10 @@ public class ChessBoardDrawer {
         return row.toString();
     }
 
-    public void listGames(Collection<GameData> games){
-        for (GameData game : games){
-            System.out.printf(EscapeSequences.SET_TEXT_COLOR_MAGENTA + "Game No. %d | ", game.gameID());
+    public void listGames(HashMap<Integer, GameData> games){
+        for (Integer gameNo : games.keySet()){
+            GameData game = games.get(gameNo);
+            System.out.printf(EscapeSequences.SET_TEXT_COLOR_MAGENTA + "Game No. %d | ", gameNo);
             System.out.printf(EscapeSequences.SET_TEXT_COLOR_BLUE + "%s | ", game.gameName());
             System.out.printf(EscapeSequences.SET_TEXT_COLOR_WHITE + "White: %s | ", game.whiteUsername());
             System.out.printf("\u001b[38;5;94m" + "Black: %s%n", game.blackUsername());

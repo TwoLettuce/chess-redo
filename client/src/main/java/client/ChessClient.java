@@ -17,16 +17,16 @@ public class ChessClient {
     private final ChessBoardDrawer drawer = new ChessBoardDrawer();
     private String loggedInStatus;
 
-    private String helpMessage = helpMessageLoggedOut;
+    private String helpMessage = HELP_MESSAGE_LOGGED_OUT;
     private final ServerFacade serverFacade;
     private String authToken = null;
-    private Collection<GameData> games = new ArrayList<>();
+    private final HashMap<Integer, GameData> games = new HashMap<>();
     private String status;
 
 
     public ChessClient(String serverUrl) {
         serverFacade = new ServerFacade(serverUrl);
-        status = notLoggedInStatus;
+        status = NOT_LOGGED_IN;
     }
 
     public void run(){
@@ -34,13 +34,12 @@ public class ChessClient {
     }
 
     private void repl(){
+        Scanner scanner = new Scanner(System.in);
+        String[] args;
         quit:
         while(true){
-            System.out.print(EscapeSequences.SET_TEXT_COLOR_GREEN);
-            System.out.print(status);
-            Scanner scanner = new Scanner(System.in);
+            System.out.print(EscapeSequences.SET_TEXT_COLOR_GREEN + status);
             String input = scanner.nextLine();
-            String[] args;
             try {
                 args = parse(input);
             } catch (InvalidCommandException ex){
@@ -77,9 +76,12 @@ public class ChessClient {
                 case "join", "j":
                     join(args);
                     break;
+                case "observe", "o":
+                    observe(args);
+                    break;
                 default:
                     System.out.print(EscapeSequences.SET_TEXT_COLOR_RED);
-                    System.out.println("Error: " + args[0] + " is an invalid command. Type 'help' for more info");
+                    System.out.println("Error: '" + args[0] + "' is an invalid command. Type 'help' for more info");
             }
         }
         System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW+ "C-ya!");
@@ -90,14 +92,6 @@ public class ChessClient {
 
     private void help() {
         System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + helpMessage);
-    }
-
-    private void clear() {
-        try {
-            serverFacade.clear();
-        } catch (Exception ex) {
-            System.out.println("clear unsuccessful");
-        }
     }
 
     private void register(String[] args) {
@@ -114,7 +108,7 @@ public class ChessClient {
             if (authToken != null) {
                 loggedInStatus = String.format("[%s] >> ", userData.username());
                 status = loggedInStatus;
-                helpMessage = helpMessageLoggedIn;
+                helpMessage = HELP_MESSAGE_LOGGED_IN;
             }
         } catch (DataAccessException ex){
             printErrorToUser(ex, "register");
@@ -135,7 +129,7 @@ public class ChessClient {
                 System.out.printf(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Logged in as %s!%n", loginRequest.username());
                 loggedInStatus = String.format("[%s] >> ", loginRequest.username());
                 status = loggedInStatus;
-                helpMessage = helpMessageLoggedIn;
+                helpMessage = HELP_MESSAGE_LOGGED_IN;
             }
         } catch (DataAccessException ex){
             printErrorToUser(ex, "login");
@@ -145,8 +139,8 @@ public class ChessClient {
     private void logout() {
         try {
             serverFacade.logout(authToken);
-            helpMessage = helpMessageLoggedOut;
-            status = notLoggedInStatus;
+            helpMessage = HELP_MESSAGE_LOGGED_OUT;
+            status = NOT_LOGGED_IN;
             authToken = null;
             System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Logout Successful!");
         } catch (DataAccessException ex) {
@@ -156,7 +150,11 @@ public class ChessClient {
 
     private void list() {
         try {
-            games = serverFacade.listGames(authToken);
+            Collection<GameData> recentGames = serverFacade.listGames(authToken);
+            GameData[] recentGamesArray = recentGames.toArray(new GameData[0]);
+            for (int i = 0; i < recentGames.size(); i++){
+                games.put(i+1, recentGamesArray[i]);
+            }
             drawer.listGames(games);
             if (games.isEmpty()){
                 System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "No games yet! use 'create <name>' to create one!");
@@ -165,14 +163,86 @@ public class ChessClient {
             printErrorToUser(ex, "list");
         }
     }
-    
+
+    private void create(String[] args){
+        try {
+            String gameName;
+            try {
+                gameName = args[1];
+            }catch (ArrayIndexOutOfBoundsException ex){
+                gameName = null;
+            }
+            int gameID = serverFacade.createGame(authToken, gameName);
+            System.out.printf("%s created with Game No. %d%n", args[1], gameID);
+        } catch (DataAccessException ex){
+            printErrorToUser(ex, "create");
+        }
+    }
+
     private void join(String[] args) {
-        JoinRequest joinRequest = new JoinRequest(args[2].toUpperCase(), Integer.parseInt(args[1]));
+        String color;
+        int gameID;
+        try {
+            color = args[2].toUpperCase();
+            gameID = Integer.parseInt(args[1]);
+        } catch (NumberFormatException ex){
+            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Invalid usage for command: '" + args[0] + "'. Type 'help' for more info");
+            return;
+        } catch (ArrayIndexOutOfBoundsException ex){
+            color = null;
+            gameID = -1;
+        }
+        JoinRequest joinRequest = new JoinRequest(color, gameID);
         try {
             serverFacade.joinGame(authToken, joinRequest);
+            System.out.printf(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Joined game %d as %s%n", gameID, color);
+            draw(gameID, color);
         } catch (DataAccessException ex){
             printErrorToUser(ex, "join");
         }
+    }
+
+    private void observe(String[] args){
+        int gameID;
+        try {
+            gameID = Integer.parseInt(args[1]);
+        } catch (NumberFormatException ex){
+            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Invalid usage for command: '" + args[0] + "'. Type 'help' for more info");
+            return;
+        } catch (ArrayIndexOutOfBoundsException ex){
+            gameID = -1;
+        }
+        System.out.printf(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Now observing game %d%n", gameID);
+        draw(gameID, "white");
+    }
+
+    private void clear() {
+        if (authToken != null) {
+            logout();
+        }
+        try {
+            serverFacade.clear();
+        } catch (Exception ex) {
+            System.out.println("clear unsuccessful");
+        }
+    }
+
+    private String[] parse(String input) {
+        String[] args = input.split(" ");
+        if (!checkMaxArgs(args[0], Arrays.copyOfRange(args, 1, args.length))){
+            throw new InvalidCommandException("Invalid usage for command: '" + args[0] + "'. Type 'help' for more info");
+        }
+        return args;
+    }
+
+    private boolean checkMaxArgs(String cmd, String[] args) {
+        return switch (cmd){
+            case "register" -> args.length <= 3;
+            case "login", "join" -> args.length <= 2;
+            case "create", "observe" -> args.length <= 1;
+            case "clear", "quit", "list", "help", "logout" -> args.length == 0;
+            default -> true;
+        };
     }
 
     private void printErrorToUser(DataAccessException ex, String command) {
@@ -202,38 +272,7 @@ public class ChessClient {
         System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + errorMessage);
     }
 
-    private void create(String[] args){
-        try {
-            String gameName;
-            try {
-                gameName = args[1];
-            }catch (ArrayIndexOutOfBoundsException ex){
-                gameName = null;
-            }
-            int gameID = serverFacade.createGame(authToken, gameName);
-            System.out.printf("%s created with Game No. %d%n", args[1], gameID);
-        } catch (DataAccessException ex){
-            printErrorToUser(ex, "create");
-        }
-    }
-
-    private String[] parse(String input) {
-        String[] args = input.split(" ");
-        if (!validBasicCommands.contains(args[0])){
-            throw new InvalidCommandException("Error: '" + args[0] + "' is an invalid command. Type 'help' for more info");
-        } else if (!checkMaxArgs(args[0], Arrays.copyOfRange(args, 1, args.length))){
-            throw new InvalidCommandException("Invalid usage for command: '" + args[0] + "'. Type 'help' for more info");
-        }
-        return args;
-    }
-
-    private boolean checkMaxArgs(String cmd, String[] args) {
-        return switch (cmd){
-            case "register" -> args.length <= 3;
-            case "login", "join" -> args.length <= 2;
-            case "create", "observe" -> args.length <= 1;
-            case "clear", "quit", "list", "help", "logout" -> args.length == 0;
-            default -> false;
-        };
+    private void draw(int gameID, String color) {
+        System.out.println(drawer.drawBoard(games.get(gameID).game().getBoard(), color.toUpperCase()));
     }
 }

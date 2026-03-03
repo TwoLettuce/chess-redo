@@ -1,11 +1,8 @@
 package ui;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class HelpfulStrings {
 
-    public static final String helpMessageLoggedOut =
+    public static final String HELP_MESSAGE_LOGGED_OUT =
             "Commands and Usages:\n" + EscapeSequences.SET_TEXT_UNDERLINE +
                     "help - display the help menu\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
                     ">> help\n" + EscapeSequences.SET_TEXT_UNDERLINE +
@@ -16,7 +13,7 @@ public class HelpfulStrings {
                     "quit - exit the chess client\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
                     ">> quit";
 
-    public static final String helpMessageLoggedIn =
+    public static final String HELP_MESSAGE_LOGGED_IN =
             "Commands and Usages:\n" + EscapeSequences.SET_TEXT_UNDERLINE +
                     "help - display the help menu\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
                     ">> help\n" + EscapeSequences.SET_TEXT_UNDERLINE +
@@ -33,17 +30,5 @@ public class HelpfulStrings {
                     "quit - exit the chess client\n" + EscapeSequences.RESET_TEXT_UNDERLINE +
                     ">> quit";
 
-    public static final ArrayList<String> validBasicCommands = new ArrayList<>(List.of(
-            "h", "help",
-            "q", "quit",
-            "r", "register",
-            "l", "login",
-            "logout",
-            "list",
-            "c", "create",
-            "j", "join",
-            "o", "observe"
-    ));
-
-    public static final String notLoggedInStatus = "Not Logged in >> ";
+    public static final String NOT_LOGGED_IN = "[Not Logged in] >> ";
 }
