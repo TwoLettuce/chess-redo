@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import server.GameConnection;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
+import websocket.messages.ErrorMessage;
 import websocket.messages.LoadGameMessage;
 import websocket.messages.Notification;
 import websocket.messages.ServerMessage;
@@ -51,6 +52,12 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
     private void connectToGame(WsMessageContext ctx, UserGameCommand command) throws IOException, InternalServerErrorException {
         GameData gameData = dataAccess.getGame(command.getGameID());
+        if (gameData == null){
+            ErrorMessage errorLoadingGame = new ErrorMessage(
+                    ServerMessage.ServerMessageType.ERROR, "Error: Invalid gameID: " + command.getGameID()
+            );
+            ctx.session.getRemote().sendString(gson.toJson(errorLoadingGame));
+        }
         LoadGameMessage loadGameMessage = new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData.game());
         ctx.session.getRemote().sendString(gson.toJson(loadGameMessage));
 
