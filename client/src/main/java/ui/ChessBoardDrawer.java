@@ -69,7 +69,7 @@ public class ChessBoardDrawer {
 
         for (int i = 1; i<=8; i++){
             ChessPiece thisPiece = board.getPiece(new ChessPosition(rowLabels[rowNumber], rowLabels[8-i]));
-            boolean isWhiteSquare = i % 2 + rowLabels[rowNumber] % 2 == 1;
+            boolean isWhiteSquare = i % 2 + new int[]{8, 7, 6, 5, 4, 3, 2, 1}[rowNumber] % 2 == 1;
             String pieceAsString;
             if (thisPiece != null){
                 pieceAsString = thisPiece.toString();

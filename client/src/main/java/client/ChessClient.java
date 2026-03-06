@@ -151,14 +151,16 @@ public class ChessClient {
     private void list() {
         try {
             Collection<GameData> recentGames = serverFacade.listGames(authToken);
+            if (recentGames.isEmpty()){
+                games.clear();
+                System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "No games yet! use 'create <name>' to create one!");
+                return;
+            }
             GameData[] recentGamesArray = recentGames.toArray(new GameData[0]);
             for (int i = 0; i < recentGames.size(); i++){
                 games.put(i+1, recentGamesArray[i]);
             }
             drawer.listGames(games);
-            if (games.isEmpty()){
-                System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "No games yet! use 'create <name>' to create one!");
-            }
         } catch (DataAccessException ex){
             printErrorToUser(ex, "list");
         }
@@ -173,7 +175,7 @@ public class ChessClient {
                 gameName = null;
             }
             int gameID = serverFacade.createGame(authToken, gameName);
-            System.out.printf("%s created with Game No. %d%n", args[1], gameID);
+            System.out.printf(EscapeSequences.SET_TEXT_COLOR_YELLOW + "%s created!%n", args[1]);
         } catch (DataAccessException ex){
             printErrorToUser(ex, "create");
         }
@@ -212,7 +214,6 @@ public class ChessClient {
         } catch (ArrayIndexOutOfBoundsException ex){
             gameID = -1;
         }
-        System.out.printf(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Now observing game %d%n", gameID);
         draw(gameID, "white");
     }
 
@@ -237,10 +238,10 @@ public class ChessClient {
 
     private boolean checkMaxArgs(String cmd, String[] args) {
         return switch (cmd){
-            case "register" -> args.length <= 3;
-            case "login", "join" -> args.length <= 2;
-            case "create", "observe" -> args.length <= 1;
-            case "clear", "quit", "list", "help", "logout" -> args.length == 0;
+            case "r", "register" -> args.length <= 3;
+            case "l", "login", "j", "join" -> args.length <= 2;
+            case "c", "create", "o", "observe" -> args.length <= 1;
+            case "clear", "q", "quit", "list", "h", "help", "logout" -> args.length == 0;
             default -> true;
         };
     }
@@ -249,7 +250,11 @@ public class ChessClient {
         String errorMessage = ex.getMessage();
         switch (ex.httpCode){
             case 400:
-                errorMessage = "Invalid usage for command: '" + command + "'. Type 'help' for more info";
+                if (Objects.equals(command, "join")){
+                    errorMessage = ex.getMessage();
+                } else {
+                    errorMessage = "Invalid usage for command: '" + command + "'. Type 'help' for more info";
+                }
                 break;
             case 401:
                 if (Objects.equals(command, "login")){
@@ -261,7 +266,7 @@ public class ChessClient {
             case 403:
                 if (Objects.equals(command, "register")){
                     errorMessage = "Username already taken.";
-                } else if (Objects.equals(command, "")) {
+                } else if (Objects.equals(command, "join")) {
                     errorMessage = "Color already taken.";
                 }
                 break;
@@ -273,6 +278,11 @@ public class ChessClient {
     }
 
     private void draw(int gameID, String color) {
-        System.out.println(drawer.drawBoard(games.get(gameID).game().getBoard(), color.toUpperCase()));
+        try {
+            System.out.println(drawer.drawBoard(games.get(gameID).game().getBoard(), color.toUpperCase()));
+        } catch (NullPointerException e) {
+            System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Use 'list' first after a game has been created to see games to join!");
+        }
+
     }
 }
