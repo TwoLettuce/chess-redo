@@ -3,8 +3,12 @@ package server;
 import com.google.gson.Gson;
 import dataaccess.*;
 import exception.DataAccessException;
+import handler.WebSocketHandler;
 import io.javalin.*;
 import io.javalin.http.Context;
+import io.javalin.websocket.WsCloseContext;
+import io.javalin.websocket.WsConnectContext;
+import io.javalin.websocket.WsMessageContext;
 import model.AuthData;
 import model.request.CreateRequest;
 import model.result.CreateGameResult;
@@ -16,7 +20,6 @@ import service.DataService;
 import service.GameService;
 import service.UserService;
 
-import java.util.HashMap;
 import java.util.Map;
 
 
@@ -35,6 +38,7 @@ public class Server {
     private final UserService userService = new UserService(dataAccess);
     private final GameService gameService = new GameService(dataAccess);
     private final Gson gson = new Gson();
+    private final WebSocketHandler wsHandler = new WebSocketHandler();
 
     public Server() {
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
@@ -47,7 +51,12 @@ public class Server {
                 .delete("/session", this::logout)
                 .get("/game", this::list)
                 .post("/game", this::create)
-                .put("/game", this::join);
+                .put("/game", this::join)
+                .ws("/ws", ws -> {
+                    ws.onConnect(wsHandler);
+                    ws.onMessage(wsHandler);
+                    ws.onClose(wsHandler);
+                });
     }
 
     private void clear(Context ctx){
