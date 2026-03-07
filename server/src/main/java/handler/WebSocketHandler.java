@@ -5,7 +5,9 @@ import com.google.gson.Gson;
 import dataaccess.DataAccess;
 import dataaccess.InternalServerErrorException;
 import io.javalin.websocket.*;
+import model.AuthData;
 import model.GameData;
+import model.UserData;
 import org.jetbrains.annotations.NotNull;
 import server.GameConnection;
 import websocket.commands.MakeMoveCommand;
@@ -51,6 +53,15 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
     }
 
     private void connectToGame(WsMessageContext ctx, UserGameCommand command) throws IOException, InternalServerErrorException {
+        AuthData authData = dataAccess.getAuthData(command.getAuthToken());
+        if (authData == null){
+            ErrorMessage errorLoadingGame = new ErrorMessage(
+                    ServerMessage.ServerMessageType.ERROR, "Error: Invalid AuthToken"
+            );
+            ctx.session.getRemote().sendString(gson.toJson(errorLoadingGame));
+        }
+
+        String username = authData.username();
         GameData gameData = dataAccess.getGame(command.getGameID());
         if (gameData == null){
             ErrorMessage errorLoadingGame = new ErrorMessage(
@@ -62,7 +73,6 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         ctx.session.getRemote().sendString(gson.toJson(loadGameMessage));
 
         if (connections.containsKey(command.getGameID())) {
-            String username = dataAccess.getAuthData(command.getAuthToken()).username();
             String color;
             if (Objects.equals(username, gameData.whiteUsername())){
                 color = "white.";
