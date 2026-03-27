@@ -42,7 +42,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
                 try {
                     connectToGame(ctx, command);
                 } catch (IOException | InternalServerErrorException e) {
-                    throw new RuntimeException(e);
+                    System.out.println("Error connecting to game");
                 }
             }
             case MAKE_MOVE -> {
@@ -94,6 +94,12 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
     }
 
     public void handleClose(@NotNull WsCloseContext ctx){
+        for (int key : connections.keySet()){
+            if (connections.get(key).connectedUsers.contains(ctx.session)){
+                connections.get(key).removeUser(ctx.session);
+                break;
+            }
+        }
         System.out.println("Connection closed");
     }
 }

@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class GameConnection {
-    ArrayList<Session> connectedUsers = new ArrayList<>();
+    public ArrayList<Session> connectedUsers = new ArrayList<>();
 
     public void addUser(Session session){
         connectedUsers.add(session);
