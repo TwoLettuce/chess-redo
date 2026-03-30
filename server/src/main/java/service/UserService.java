@@ -43,6 +43,19 @@ public class UserService {
         dataAccess.removeAuth(authToken);
     }
 
+    public String getUsername(String authToken) {
+        AuthData authData = null;
+        try {
+            authData = dataAccess.getAuthData(authToken);
+        } catch (InternalServerErrorException e) {
+            return null;
+        }
+        if (authData != null){
+            return authData.username();
+        }
+        return null;
+    }
+
     private String generateToken() {
         return UUID.randomUUID().toString();
     }

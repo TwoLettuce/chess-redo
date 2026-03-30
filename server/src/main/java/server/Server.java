@@ -38,7 +38,7 @@ public class Server {
     private final UserService userService = new UserService(dataAccess);
     private final GameService gameService = new GameService(dataAccess);
     private final Gson gson = new Gson();
-    private final WebSocketHandler wsHandler = new WebSocketHandler(dataAccess);
+    private final WebSocketHandler wsHandler = new WebSocketHandler(userService, gameService);
 
     public Server() {
         javalin = Javalin.create(config -> config.staticFiles.add("web"));

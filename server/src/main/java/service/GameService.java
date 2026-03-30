@@ -1,9 +1,11 @@
 package service;
 
+import chess.ChessGame;
 import dataaccess.*;
 import model.GameData;
 import model.request.JoinRequest;
 
+import java.lang.reflect.InaccessibleObjectException;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -61,8 +63,8 @@ public class GameService {
                     dataAccess.getAuthData(authToken).username(), game.gameName(), game.game());
             dataAccess.updateGame(game.gameID(), updatedGameData);
         }
-
-
-
+    }
+    public  GameData getGame(int gameID) throws InternalServerErrorException {
+        return dataAccess.getGame(gameID);
     }
 }
