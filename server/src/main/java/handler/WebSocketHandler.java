@@ -63,7 +63,38 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
                     System.out.println("Error resigning");
                 }
             }
+            case LEAVE -> {
+                try {
+                    leave(ctx, command);
+                } catch (Exception ex){
+                    System.out.println("Error leaving game");
+                }
+            }
         }
+    }
+
+    private void leave(WsMessageContext ctx, UserGameCommand command) throws InternalServerErrorException, IOException {
+        GameData gameData = gameService.getGame(command.getGameID());
+        String username = userService.getUsername(command.getAuthToken());
+        if (gameData == null || username == null){
+            ErrorMessage error = new ErrorMessage("Error: Game/User not found.");
+            sendMessage(ctx.session, gson.toJson(error));
+            return;
+        }
+        GameData updatedGame = null;
+        if (Objects.equals(username, gameData.whiteUsername())){
+            updatedGame = new GameData(gameData.gameID(), null, gameData.blackUsername(), gameData.gameName(), gameData.game());
+        } else if (Objects.equals(username, gameData.blackUsername())){
+            updatedGame = new GameData(gameData.gameID(), gameData.whiteUsername(), null, gameData.gameName(), gameData.game());
+        }
+
+        if (updatedGame != null){
+            gameService.updateGame(updatedGame);
+        }
+
+        Notification notification = new Notification(username + " has left the game.");
+        connections.get(gameData.gameID()).broadcastMessage(ctx.session, notification);
+        ctx.session.close();
     }
 
     private void resign(WsMessageContext ctx, UserGameCommand command) throws InternalServerErrorException, IOException {
@@ -92,7 +123,6 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
         Notification resignMessage = new Notification(username + " has resigned. Game over!");
         connections.get(gameData.gameID()).broadcastMessage(null, resignMessage);
-
     }
 
     private void makeMove(WsMessageContext ctx, MakeMoveCommand command) throws InternalServerErrorException, IOException {
