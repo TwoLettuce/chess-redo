@@ -83,9 +83,16 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         gameService.updateGame(gameData);
         Notification moveMade = new Notification(username + " has made the move " + moveToString(command.getMove()) + ".");
         connections.get(gameData.gameID()).broadcastMessage(ctx.session, moveMade);
+
+        Notification statusUpdate = checkGameStatus(gameData.game());
+        if (statusUpdate != null){
+            connections.get(gameData.gameID()).broadcastMessage(null, statusUpdate);
+        }
+
         LoadGameMessage loadGameMessage = new LoadGameMessage(gameData.game());
         connections.get(gameData.gameID()).broadcastMessage(null, loadGameMessage);
     }
+
 
 
 
@@ -130,11 +137,30 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         System.out.println("Connection closed");
     }
 
+    private Notification checkGameStatus(ChessGame game) {
+        ChessGame.TeamColor[] colors = {ChessGame.TeamColor.WHITE, ChessGame.TeamColor.BLACK};
+        Notification notification = null;
+        for (var color : colors){
+            if (game.isInCheckmate(color)){
+                if (color == ChessGame.TeamColor.WHITE){
+                    notification = new Notification(color + " is in checkmate. Black wins!");
+                } else {
+                    notification = new Notification(color + " is in checkmate. White wins!");
+                }
+            } else if (game.isInCheck(color)){
+                notification = new Notification(color + " is in check.");
+            } else if (game.isInStalemate(color)){
+                notification = new Notification("Draw! The game ends in stalemate!");
+            }
+        }
+        return notification;
+    }
+
     private String moveToString(ChessMove move) {
         char[] arr = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
-        return String.valueOf(arr[move.getStartPosition().getColumn()]) + move.getStartPosition().getRow() +
+        return String.valueOf(arr[move.getStartPosition().getColumn()-1]) + move.getStartPosition().getRow() +
                 "->" +
-                arr[move.getEndPosition().getColumn()] + move.getEndPosition().getRow();
+                arr[move.getEndPosition().getColumn()-1] + move.getEndPosition().getRow();
     }
 
     private void sendMessage(Session session, String message) throws IOException {
