@@ -1,6 +1,8 @@
 package handler;
 
 import chess.ChessGame;
+import chess.ChessMove;
+import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataaccess.DataAccess;
 import dataaccess.InternalServerErrorException;
@@ -55,14 +57,37 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
                 try {
                     makeMove(ctx, moveCommand);
                 } catch (Exception ex) {
-
+                    System.out.println("Error making move");
                 }
             }
         }
     }
 
-    private void makeMove(WsMessageContext ctx, MakeMoveCommand command) throws IOException, InternalServerErrorException {
+    private void makeMove(WsMessageContext ctx, MakeMoveCommand command) throws InternalServerErrorException, IOException {
+        GameData gameData = gameService.getGame(command.getGameID());
+        String username = userService.getUsername(command.getAuthToken());
+        if (gameData == null || username == null){
+            ErrorMessage error = new ErrorMessage("Error: Game/User not found");
+            sendMessage(ctx.session, gson.toJson(error));
+            return;
+        }
+
+        try {
+            gameData.game().makeMove(command.getMove());
+        } catch (InvalidMoveException ex){
+            ErrorMessage error = new ErrorMessage("Error: Invalid move");
+            sendMessage(ctx.session, gson.toJson(error));
+            return;
+        }
+
+        gameService.updateGame(gameData);
+        Notification moveMade = new Notification(username + "has made the move " + moveToString(command.getMove()) + ".");
+        connections.get(gameData.gameID()).broadcastMessage(moveMade);
+        LoadGameMessage loadGameMessage = new LoadGameMessage(gameData.game());
+        connections.get(gameData.gameID()).broadcastMessage(loadGameMessage);
     }
+
+
 
     private void connectToGame(WsMessageContext ctx, UserGameCommand command) throws IOException, InternalServerErrorException {
         GameData gameData = gameService.getGame(command.getGameID());
@@ -73,7 +98,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             return;
         }
 
-        LoadGameMessage loadGameMessage = new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData.game());
+        LoadGameMessage loadGameMessage = new LoadGameMessage(gameData.game());
         sendMessage(ctx.session, gson.toJson(loadGameMessage));
 
         if (connections.containsKey(command.getGameID())) {
@@ -103,7 +128,13 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             }
         }
         System.out.println("Connection closed");
-        var session = ctx.session;
+    }
+
+    private String moveToString(ChessMove move) {
+        char[] arr = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+        return String.valueOf(arr[move.getStartPosition().getColumn()]) + move.getStartPosition().getRow() +
+                "->" +
+                arr[move.getEndPosition().getColumn()] + move.getEndPosition().getRow();
     }
 
     private void sendMessage(Session session, String message) throws IOException {

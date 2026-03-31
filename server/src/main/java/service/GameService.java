@@ -64,6 +64,15 @@ public class GameService {
             dataAccess.updateGame(game.gameID(), updatedGameData);
         }
     }
+
+    public void updateGame(GameData gameData) throws InternalServerErrorException {
+        try {
+            dataAccess.updateGame(gameData.gameID(), gameData);
+        } catch (BadRequestException e) {
+            System.out.println("bad gameID?");
+        }
+    }
+
     public  GameData getGame(int gameID) throws InternalServerErrorException {
         return dataAccess.getGame(gameID);
     }
