@@ -56,14 +56,55 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
                     System.out.println("Error making move");
                 }
             }
+            case RESIGN -> {
+                try {
+                    resign(ctx, command);
+                } catch (Exception ex) {
+                    System.out.println("Error resigning");
+                }
+            }
         }
+    }
+
+    private void resign(WsMessageContext ctx, UserGameCommand command) throws InternalServerErrorException, IOException {
+        GameData gameData = gameService.getGame(command.getGameID());
+        String username = userService.getUsername(command.getAuthToken());
+        if (gameData == null || username == null){
+            ErrorMessage error = new ErrorMessage("Error: Game/User not found.");
+            sendMessage(ctx.session, gson.toJson(error));
+            return;
+        }
+
+        if (!Objects.equals(gameData.whiteUsername(), username) && !Objects.equals(gameData.blackUsername(), username)){
+            ErrorMessage error = new ErrorMessage("Error: Observers cannot resign.");
+            sendMessage(ctx.session, gson.toJson(error));
+            return;
+        }
+
+        if (isGameOver(gameData.game())){
+            ErrorMessage errorMessage = new ErrorMessage("Error: Game is over.");
+            sendMessage(ctx.session, gson.toJson(errorMessage));
+            return;
+        }
+
+        gameData.game().resign();
+        gameService.updateGame(gameData);
+
+
+
     }
 
     private void makeMove(WsMessageContext ctx, MakeMoveCommand command) throws InternalServerErrorException, IOException {
         GameData gameData = gameService.getGame(command.getGameID());
         String username = userService.getUsername(command.getAuthToken());
         if (gameData == null || username == null){
-            ErrorMessage error = new ErrorMessage("Error: Game/User not found");
+            ErrorMessage error = new ErrorMessage("Error: Game/User not found.");
+            sendMessage(ctx.session, gson.toJson(error));
+            return;
+        }
+
+        if(isGameOver(gameData.game())){
+            ErrorMessage error = new ErrorMessage("Error: Game is over.");
             sendMessage(ctx.session, gson.toJson(error));
             return;
         }
@@ -77,7 +118,7 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         try {
             gameData.game().makeMove(command.getMove());
         } catch (InvalidMoveException ex){
-            ErrorMessage error = new ErrorMessage("Error: Invalid move");
+            ErrorMessage error = new ErrorMessage("Error: Invalid move.");
             sendMessage(ctx.session, gson.toJson(error));
             return;
         }
@@ -181,5 +222,11 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
     private void sendMessage(Session session, String message) throws IOException {
         session.getRemote().sendString(message);
+    }
+
+    private boolean isGameOver(ChessGame game){
+        return game.isResigned() ||
+                game.isInStalemate(ChessGame.TeamColor.WHITE) || game.isInStalemate(ChessGame.TeamColor.BLACK) ||
+                game.isInCheckmate(ChessGame.TeamColor.WHITE) || game.isInCheckmate(ChessGame.TeamColor.BLACK);
     }
 }

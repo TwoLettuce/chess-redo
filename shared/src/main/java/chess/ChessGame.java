@@ -15,6 +15,8 @@ import java.util.Objects;
 public class ChessGame {
     ChessBoard board;
     TeamColor teamTurn;
+    boolean resigned = false;
+
     public ChessGame() {
         teamTurn = TeamColor.WHITE;
         board = new ChessBoard();
@@ -216,6 +218,14 @@ public class ChessGame {
         }
         ChessGame chessGame = (ChessGame) o;
         return Objects.equals(board, chessGame.board) && teamTurn == chessGame.teamTurn;
+    }
+
+    public void resign() {
+        resigned = true;
+    }
+
+    public boolean isResigned() {
+        return resigned;
     }
 
     @Override
