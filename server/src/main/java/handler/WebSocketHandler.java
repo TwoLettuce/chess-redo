@@ -8,7 +8,6 @@ import io.javalin.websocket.*;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
-import model.request.JoinRequest;
 import org.jetbrains.annotations.NotNull;
 import server.GameConnection;
 import service.GameService;
@@ -68,6 +67,11 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
     private void connectToGame(WsMessageContext ctx, UserGameCommand command) throws IOException, InternalServerErrorException {
         GameData gameData = gameService.getGame(command.getGameID());
         String username = userService.getUsername(command.getAuthToken());
+        if (gameData == null || username == null){
+            ErrorMessage error = new ErrorMessage("Error: Game/User not found");
+            sendMessage(ctx.session, gson.toJson(error));
+            return;
+        }
 
         LoadGameMessage loadGameMessage = new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData.game());
         sendMessage(ctx.session, gson.toJson(loadGameMessage));
