@@ -4,12 +4,9 @@ import chess.ChessGame;
 import chess.ChessMove;
 import chess.InvalidMoveException;
 import com.google.gson.Gson;
-import dataaccess.DataAccess;
 import dataaccess.InternalServerErrorException;
 import io.javalin.websocket.*;
-import model.AuthData;
 import model.GameData;
-import model.UserData;
 import org.jetbrains.annotations.NotNull;
 import server.GameConnection;
 import service.GameService;
@@ -19,7 +16,6 @@ import websocket.commands.UserGameCommand;
 import websocket.messages.ErrorMessage;
 import websocket.messages.LoadGameMessage;
 import websocket.messages.Notification;
-import websocket.messages.ServerMessage;
 import org.eclipse.jetty.websocket.api.Session;
 
 import java.io.IOException;
@@ -72,6 +68,12 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             return;
         }
 
+        var errorMessage = verifyUserTurn(gameData, username);
+        if (errorMessage != null){
+            sendMessage(ctx.session, gson.toJson(errorMessage));
+            return;
+        }
+
         try {
             gameData.game().makeMove(command.getMove());
         } catch (InvalidMoveException ex){
@@ -92,7 +94,6 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         LoadGameMessage loadGameMessage = new LoadGameMessage(gameData.game());
         connections.get(gameData.gameID()).broadcastMessage(null, loadGameMessage);
     }
-
 
 
 
@@ -135,6 +136,21 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             }
         }
         System.out.println("Connection closed");
+    }
+
+    private ErrorMessage verifyUserTurn(GameData gameData, String username) {
+        var currentTurn = gameData.game().getTeamTurn();
+        ErrorMessage err = null;
+        if (currentTurn == ChessGame.TeamColor.WHITE) {
+            if (!Objects.equals(gameData.whiteUsername(), username)){
+                err = new ErrorMessage("It's white's turn. You are not the white player.");
+            }
+        } else {
+            if (!Objects.equals(gameData.blackUsername(), username)){
+                err = new ErrorMessage("It's black's turn. You are not the black player.");
+            }
+        }
+        return err;
     }
 
     private Notification checkGameStatus(ChessGame game) {
