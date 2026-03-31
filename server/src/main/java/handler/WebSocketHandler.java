@@ -81,10 +81,10 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
         }
 
         gameService.updateGame(gameData);
-        Notification moveMade = new Notification(username + "has made the move " + moveToString(command.getMove()) + ".");
-        connections.get(gameData.gameID()).broadcastMessage(moveMade);
+        Notification moveMade = new Notification(username + " has made the move " + moveToString(command.getMove()) + ".");
+        connections.get(gameData.gameID()).broadcastMessage(ctx.session, moveMade);
         LoadGameMessage loadGameMessage = new LoadGameMessage(gameData.game());
-        connections.get(gameData.gameID()).broadcastMessage(loadGameMessage);
+        connections.get(gameData.gameID()).broadcastMessage(null, loadGameMessage);
     }
 
 
@@ -110,8 +110,8 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
             } else {
                 color = "an observer.";
             }
-            Notification notification = new Notification(username + "has joined as " + color);
-            connections.get(command.getGameID()).broadcastMessage(notification);
+            Notification notification = new Notification(username + " has joined as " + color);
+            connections.get(command.getGameID()).broadcastMessage(null, notification);
             connections.get(command.getGameID()).addUser(ctx.session);
         } else {
             GameConnection connection = new GameConnection();

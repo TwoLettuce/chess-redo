@@ -18,9 +18,11 @@ public class GameConnection {
         connectedUsers.remove(session);
     }
 
-    public void broadcastMessage(ServerMessage message) throws IOException {
+    public void broadcastMessage(Session excludedSession, ServerMessage message) throws IOException {
         for (Session c : connectedUsers){
-            c.getRemote().sendString(new Gson().toJson(message));
+            if (c != excludedSession) {
+                c.getRemote().sendString(new Gson().toJson(message));
+            }
         }
     }
 }
