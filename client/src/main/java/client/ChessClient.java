@@ -1,5 +1,6 @@
 package client;
 
+import chess.*;
 import exception.DataAccessException;
 import model.GameData;
 import model.UserData;
@@ -8,12 +9,19 @@ import model.request.LoginRequest;
 import server.ServerFacade;
 import ui.ChessBoardDrawer;
 import ui.EscapeSequences;
+import websocket.NotificationHandler;
+import websocket.WebSocketFacade;
+import websocket.commands.MakeMoveCommand;
+import websocket.commands.UserGameCommand;
+import websocket.messages.ErrorMessage;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.Notification;
 
 import java.util.*;
 
 import static ui.HelpfulStrings.*;
 
-public class ChessClient {
+public class ChessClient implements NotificationHandler {
     private final ChessBoardDrawer drawer = new ChessBoardDrawer();
     private String loggedInStatus;
 
@@ -22,10 +30,14 @@ public class ChessClient {
     private String authToken = null;
     private final HashMap<Integer, GameData> games = new HashMap<>();
     private String status;
-
+    private String teamColor = "WHITE";
+    private final Scanner scanner = new Scanner(System.in);
+    private final WebSocketFacade ws;
+    private ChessGame game;
 
     public ChessClient(String serverUrl) {
         serverFacade = new ServerFacade(serverUrl);
+        ws = new WebSocketFacade(serverUrl, this);
         status = NOT_LOGGED_IN;
     }
 
@@ -34,7 +46,6 @@ public class ChessClient {
     }
 
     private void repl(){
-        Scanner scanner = new Scanner(System.in);
         String[] args;
         quit:
         while(true){
@@ -88,7 +99,43 @@ public class ChessClient {
         System.exit(0);
     }
 
-
+    private void in_game_repl(int gameID) {
+        UserGameCommand connectCommand = new UserGameCommand(UserGameCommand.CommandType.CONNECT, authToken, gameID);
+        ws.connect(connectCommand);
+        status = IN_GAME;
+        String[] args;
+        leave:
+        while(true) {
+            System.out.print(EscapeSequences.SET_TEXT_COLOR_GREEN + status);
+            String input = scanner.nextLine();
+            args = input.split(" ");
+            switch (args[0]){
+                case "m", "move":
+                    makeMove(args, gameID);
+                    break;
+                case "help":
+                    help();
+                    break;
+                case "l","leave":
+                    UserGameCommand leaveCommand = new UserGameCommand(UserGameCommand.CommandType.LEAVE, authToken, gameID);
+                    ws.leave(leaveCommand);
+                    break leave;
+                case "h", "highlight":
+                    break;
+                case "resign":
+                    break;
+                case "r", "redraw":
+                    System.out.println();
+                    draw(gameID, teamColor);
+                    break;
+                default:
+                    System.out.print(EscapeSequences.SET_TEXT_COLOR_RED);
+                    System.out.println("Error: '" + args[0] + "' is an invalid command. Type 'help' for more info");
+            }
+        }
+        helpMessage = HELP_MESSAGE_LOGGED_IN;
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Returning to main menu . . .");
+    }
 
     private void help() {
         System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + helpMessage);
@@ -174,7 +221,7 @@ public class ChessClient {
             }catch (ArrayIndexOutOfBoundsException ex){
                 gameName = null;
             }
-            int gameID = serverFacade.createGame(authToken, gameName);
+            serverFacade.createGame(authToken, gameName);
             System.out.printf(EscapeSequences.SET_TEXT_COLOR_YELLOW + "%s created!%n", args[1]);
         } catch (DataAccessException ex){
             printErrorToUser(ex, "create");
@@ -199,6 +246,9 @@ public class ChessClient {
             serverFacade.joinGame(authToken, joinRequest);
             System.out.printf(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Joined game %d as %s%n", gameID, color);
             draw(gameID, color);
+            teamColor = color;
+            helpMessage = HELP_MESSAGE_PLAYER;
+            in_game_repl(gameID);
         } catch (DataAccessException ex){
             printErrorToUser(ex, "join");
         }
@@ -215,6 +265,10 @@ public class ChessClient {
             gameID = -1;
         }
         draw(gameID, "white");
+        helpMessage = HELP_MESSAGE_OBSERVER;
+        status = IN_GAME;
+        teamColor = "WHITE";
+        in_game_repl(gameID);
     }
 
     private void clear() {
@@ -283,6 +337,77 @@ public class ChessClient {
         } catch (NullPointerException e) {
             System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + "Use 'list' first after a game has been created to see games to join!");
         }
+    }
 
+    private void makeMove(String[] args, int gameID) {
+        ChessPosition startPos = parsePosition(args[1]);
+        ChessPosition endPos = parsePosition(args[2]);
+        if (startPos == null || endPos == null){
+            System.out.print(EscapeSequences.SET_TEXT_COLOR_RED);
+            System.out.println("Error: invalid move. Type 'help' for more info");
+            return;
+        }
+        ChessPiece.PieceType promoPiece = null;
+        if(game.getBoard().getPiece(startPos).getPieceType() == ChessPiece.PieceType.PAWN &&
+                endPos.getRow() == 1 || endPos.getRow() == 8){
+            System.out.print("\nEnter promotion piece:");
+            String piece = scanner.nextLine();
+            promoPiece = parsePromo(piece);
+        }
+        ChessMove move = new ChessMove(startPos, endPos, promoPiece);
+        MakeMoveCommand moveCommand = new MakeMoveCommand(authToken, gameID, move);
+        ws.makeMove(moveCommand);
+    }
+
+    private ChessPiece.PieceType parsePromo(String piece) {
+        return switch (piece.toUpperCase()){
+            case "QUEEN" -> ChessPiece.PieceType.QUEEN;
+            case "ROOK" -> ChessPiece.PieceType.ROOK;
+            case "KNIGHT" -> ChessPiece.PieceType.KNIGHT;
+            case "BISHOP" -> ChessPiece.PieceType.BISHOP;
+            default -> null;
+        };
+    }
+
+    private ChessPosition parsePosition(String pos) {
+        char[] chars = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
+        int col = 0;
+        int row;
+        for (int i = 0; i < chars.length; i++){
+            if (pos.charAt(0) == chars[i]){
+                col = i+1;
+            }
+        }
+        try {
+            row = Integer.parseInt(String.valueOf(pos.charAt(1)));
+        } catch (NumberFormatException e) {
+            row = -1;
+        }
+        if (col < 1 || row < 1){
+            return null;
+        }
+        return new ChessPosition(row, col);
+    }
+
+    @Override
+    public void notify(Notification message) {
+        System.out.println();
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + message.getMessage());
+        System.out.print(status);
+    }
+
+    @Override
+    public void notify(ErrorMessage message) {
+        System.out.println();
+        System.out.println(EscapeSequences.SET_TEXT_COLOR_RED + message.getErrorMessage());
+        System.out.print(status);
+    }
+
+    @Override
+    public void notify(LoadGameMessage message) {
+        System.out.println();
+        game = message.getGame();
+        drawer.drawBoard(game.getBoard(), teamColor);
+        System.out.print(status);
     }
 }
