@@ -35,13 +35,16 @@ public class WebSocketFacade extends Endpoint {
             throw new UnableToConnectException("Unable to establish connection with server.");
         }
 
-        this.session.addMessageHandler((MessageHandler.Whole<String>) message -> {
-            ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
-            switch (serverMessage.getServerMessageType()){
-                case NOTIFICATION -> notifier.notify(gson.fromJson(message, Notification.class));
-                case LOAD_GAME -> notifier.notify(gson.fromJson(message, LoadGameMessage.class));
-                case ERROR -> notifier.notify(gson.fromJson(message, ErrorMessage.class));
-                default -> notifier.notify(new ErrorMessage("unrecognized server message"));
+        session.addMessageHandler(new MessageHandler.Whole<String>() {
+            @OnMessage
+            public void onMessage (String message){
+                ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
+                switch (serverMessage.getServerMessageType()){
+                    case NOTIFICATION -> notifier.notify(gson.fromJson(message, Notification.class));
+                    case LOAD_GAME -> notifier.notify(gson.fromJson(message, LoadGameMessage.class));
+                    case ERROR -> notifier.notify(gson.fromJson(message, ErrorMessage.class));
+                    default -> notifier.notify(new ErrorMessage("unrecognized server message"));
+                }
             }
         });
     }

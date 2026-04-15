@@ -100,6 +100,7 @@ public class ChessClient implements NotificationHandler {
     }
 
     private void in_game_repl(int gameID) {
+        helpMessage = HELP_MESSAGE_PLAYER;
         UserGameCommand connectCommand = new UserGameCommand(UserGameCommand.CommandType.CONNECT, authToken, gameID);
         ws.connect(connectCommand);
         status = IN_GAME;
@@ -133,6 +134,7 @@ public class ChessClient implements NotificationHandler {
                     System.out.println("Error: '" + args[0] + "' is an invalid command. Type 'help' for more info");
             }
         }
+        status = loggedInStatus;
         helpMessage = HELP_MESSAGE_LOGGED_IN;
         System.out.println(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Returning to main menu . . .");
     }
@@ -245,9 +247,7 @@ public class ChessClient implements NotificationHandler {
         try {
             serverFacade.joinGame(authToken, joinRequest);
             System.out.printf(EscapeSequences.SET_TEXT_COLOR_YELLOW + "Joined game %d as %s%n", gameID, color);
-            draw(gameID, color);
             teamColor = color;
-            helpMessage = HELP_MESSAGE_PLAYER;
             in_game_repl(gameID);
         } catch (DataAccessException ex){
             printErrorToUser(ex, "join");

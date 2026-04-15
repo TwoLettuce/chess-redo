@@ -20,6 +20,7 @@ import org.eclipse.jetty.websocket.api.Session;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsCloseHandler {
@@ -39,6 +40,12 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
     }
 
     public void handleMessage(WsMessageContext ctx) {
+        System.out.println("message received: " + ctx.message());
+        try {
+            ctx.session.getRemote().sendString(gson.toJson(Map.of("message", "ni-howdy!")));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         UserGameCommand command = gson.fromJson(ctx.message(), UserGameCommand.class);
         switch (command.getCommandType()) {
             case CONNECT -> {
@@ -94,7 +101,6 @@ public class WebSocketHandler implements WsConnectHandler, WsMessageHandler, WsC
 
         Notification notification = new Notification(username + " has left the game.");
         connections.get(gameData.gameID()).broadcastMessage(ctx.session, notification);
-        ctx.session.close();
     }
 
     private void resign(WsMessageContext ctx, UserGameCommand command) throws InternalServerErrorException, IOException {
